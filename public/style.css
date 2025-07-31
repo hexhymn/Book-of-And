@@ -1,0 +1,189 @@
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: black;
+  font-family: "IM Fell English", sans-serif;
+  color: white;
+  height: 100vh;
+  overflow: hidden; /* Prevent body scrolling */
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100vh; /* Fixed height */
+  overflow: hidden; /* Prevent main from expanding */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* prompt-container */
+#prompt-container {
+  width: 100%;
+  height: 20vh;
+  padding: 20px;
+  text-align: center;
+  border-bottom: 2px solid black;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* Navigation bar */
+.navigation-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 50%;
+  padding: 15px 20px;
+  border-top: 2px solid white;
+  border-bottom: 2px solid white;
+  background: black;
+}
+
+.navigation-title {
+  color: white;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+
+/* Navigation buttons */
+.nav-button {
+  padding: 12px 24px;
+  background-color: transparent;
+  color: white;
+  border: 2px solid white;
+  border-radius: 0;
+  cursor: pointer;
+  font-family: "IM Fell English", sans-serif;
+  font-size: 16px;
+  transition: all 0.3s ease;
+  letter-spacing: 1px;
+}
+
+.nav-button:hover {
+  background-color: white;
+  color: black;
+  transform: translateY(-2px);
+}
+
+.nav-button:active {
+  transform: translateY(0);
+}
+
+/* message-container with fixed height but allows inner scrolling */
+#message-container {
+  width: 50%;
+  height: 70vh; /* Fixed height */
+  min-height: 70vh; /* Minimum height */
+  max-height: 70vh; /* Maximum height - this is crucial */
+  padding: 0; /* Remove padding to let inner element handle it */
+  background-color: black;
+  overflow: hidden; /* Prevent container expansion */
+  border-top: none; /* Removed since navigation bar has border */
+  box-sizing: border-box;
+  position: relative;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* system-prompt Input */
+/* hide system prompt and token slider so that they still work but arent visible */
+#system-prompt,
+#num-tokens {
+  display: none;
+}
+
+/* This is the scrollable container inside message-container */
+.message-scroll {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 1.2em;
+  height: 100%; /* Use full height of parent */
+  overflow-y: auto; /* Enable vertical scrolling HERE */
+  overflow-x: hidden; /* Hide horizontal overflow */
+  padding: 15px; /* Move padding here */
+  padding-bottom: 80px; /* Extra padding at bottom for input box */
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* The container for messages */
+.messages {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* typing indicator */
+.message.typing .messageBody {
+  color: gray;
+}
+
+/* username */
+.username {
+  font-weight: bold;
+  text-align: right;
+}
+
+/* Message content control */
+.message {
+  max-width: 100%;
+  word-wrap: break-word;
+  margin: 0;
+  padding: 0;
+}
+
+.messageBody {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  line-height: 1.6;
+}
+
+/* input message */
+#input-message {
+  font-size: 90%;
+  border: none;
+  border-top: 2px solid white;
+  bottom: 0;
+  height: 60px;
+  left: 0;
+  outline: none;
+  padding-left: 10px;
+  width: 100%;
+  background: black;
+  color: white;
+  position: absolute;
+}
+
+/* make responsive */
+@media screen and (max-width: 750px) {
+  #prompt-container {
+    width: 100%;
+    height: auto;
+    padding: 10px;
+  }
+
+  .navigation-bar {
+    width: 100%;
+    padding: 10px;
+  }
+
+  #message-container {
+    height: 60vh;
+    min-height: 60vh;
+    max-height: 60vh;
+    border-top: none;
+    width: 100%;
+  }
+  
+  .message-scroll {
+    padding-bottom: 80px; /* Ensure mobile also has enough space */
+  }
+}
