@@ -1,320 +1,261 @@
-const socket = io(); // This will automatically connect to the same domain
-// 
-// console.log("Architectural Ghost sketch loading...");
+console.log("Ghost sketch loading...");
 
-// ===== ARCHITECTURAL BLOCK CLASS =====
-class ArchitecturalBlock {
-  constructor(x, y, z, size, blockType) {
+// ===== PARTICLE CLASS =====
+// ===== PARTICLE CLASS =====
+// ===== OPTIMIZED PARTICLE CLASS =====
+class WordParticle {
+  constructor(word, x, y) {
+    this.word = word.toLowerCase();
     this.x = x;
     this.y = y;
-    this.z = z || 0;
-    this.size = size;
-    this.blockType = blockType; // 'stone', 'void', 'column', 'arch'
-    this.age = 0;
-    this.maxAge = random(200, 500);
-    this.opacity = 255;
+    this.vx = random(-0.5, 0.5); // Reduced movement
+    this.vy = random(-0.5, 0.5);
+    this.size = random(3, 8);
+    this.baseSize = this.size;
+    this.alpha = 255;
+    this.life = 1000;
+    // make the decay of some particles more exaggerated (some live longer than others)
+    //  by using the wordcount from the main particle system
+    //  to affect some values of each particle in a consistent way
+    //  (set once at creation and doesn't change with each update)
+    this.decay = random(0.1, (particleSystem.totalWordCount * 0.05));
     this.connections = [];
-    this.hasDecayed = false;
-    this.decayRate = random(0.5, 2);
-    this.noiseOffset = random(1000);
+    this.isNew = true;
+    this.age = 0;
+    this.maxAge = 120;
     
-    // Architectural properties
-    this.isStructural = random() < 0.3; // Some blocks are load-bearing
-    this.erosionLevel = 0;
-    this.maxErosion = random(50, 150);
+    // Simplified twinkle
+    this.twinkleOffset = random(1000);
+    this.twinkleSpeed = random(0.02, 0.05); // Slower for smoother animation
+    
+    // Circular boundary properties
+    this.centerX = width / 2;
+    this.centerY = height / 2;
+    this.maxRadius = min(width, height) / 2 - 10; // Leave some padding
   }
   
   update() {
+    // use the wordcount from the main particle system
+    //  to affect some values on each particle every update
+    const randomness = particleSystem.totalWordCount * 0.015;
     this.age++;
     
-    // Gradual erosion using noise
-    let erosionNoise = noise(this.x * 0.01, this.y * 0.01, frameCount * 0.001);
-    if (erosionNoise > 0.6) {
-      this.erosionLevel += this.decayRate;
+    // make x & y positions a bit random each update - so they are jittery
+    this.x += (this.vx + random(-randomness, randomness));
+    this.y += (this.vy + random(-randomness, randomness));
+    
+    // Circular boundary constraint
+    let distanceFromCenter = dist(this.x, this.y, this.centerX, this.centerY);
+    
+    if (distanceFromCenter > this.maxRadius) {
+      // Calculate angle from center to particle
+      let angle = atan2(this.y - this.centerY, this.x - this.centerX);
+      
+      // Place particle at the boundary
+      this.x = this.centerX + cos(angle) * this.maxRadius;
+      this.y = this.centerY + sin(angle) * this.maxRadius;
+      
+      // Reflect velocity (bounce off the circular boundary)
+      // Calculate normal vector at boundary point
+      let normalX = cos(angle);
+      let normalY = sin(angle);
+      
+      // Reflect velocity vector off the normal
+      let dotProduct = this.vx * normalX + this.vy * normalY;
+      this.vx = this.vx - 2 * dotProduct * normalX;
+      this.vy = this.vy - 2 * dotProduct * normalY;
+      
+      // Add some damping to prevent particles from getting too energetic
+      this.vx *= 0.8;
+      this.vy *= 0.8;
     }
     
-    // Structural decay
-    if (this.erosionLevel > this.maxErosion) {
-      this.hasDecayed = true;
-      this.opacity = max(0, this.opacity - 3);
-    }
+    //matrix to symbolize letters in the alphabet
+    this.life -= this.decay;
+    this.alpha = this.life;
+    this.vx *= 0.98;
+    this.vy *= 0.98;
     
-    // Fade in new blocks
-    if (this.age < 30) {
-      this.opacity = map(this.age, 0, 30, 0, 255);
+    if (this.isNew && this.age > this.maxAge) {
+      this.isNew = false;
     }
   }
   
   display() {
-    push();
-    translate(this.x, this.y, this.z);
+    // Simpler twinkle
+    let twinkle = sin(frameCount * this.twinkleSpeed + this.twinkleOffset) * 0.3 + 0.7;
+    let twinkleAlpha = this.alpha * twinkle;
+    let twinkleSize = this.baseSize * twinkle;
     
-    // Different rendering based on block type
-    switch(this.blockType) {
-      case 'stone':
-        this.drawStoneBlock();
-        break;
-      case 'void':
-        this.drawVoid();
-        break;
-      case 'column':
-        this.drawColumn();
-        break;
-      case 'arch':
-        this.drawArch();
-        break;
-    }
-    
-    pop();
-  }
-  
-  drawStoneBlock() {
-    // Stone texture with erosion
-    let erosionFactor = map(this.erosionLevel, 0, this.maxErosion, 1, 0.3);
-    let blockSize = this.size * erosionFactor;
-    
-    // Multiple layers for depth
-    for (let i = 0; i < 3; i++) {
-      let layerSize = blockSize * (1 - i * 0.1);
-      let layerAlpha = this.opacity * (1 - i * 0.2);
-      
-      fill(200 - i * 30, 180 - i * 20, 160 - i * 15, layerAlpha);
-      noStroke();
-      box(layerSize, layerSize, layerSize * 0.6);
-    }
-    
-    // Weathering details
-    if (this.erosionLevel > 20) {
-      stroke(100, 50);
+    // Limited connections
+    if (this.connections.length > 0) {
+      stroke(140, 80);
       strokeWeight(0.5);
-      // Draw erosion lines
-      for (let j = 0; j < 3; j++) {
-        let lineY = random(-this.size/2, this.size/2);
-        line(-this.size/2, lineY, this.size/2, lineY);
+      
+      // Only draw first 2 connections
+      for (let i = 0; i < Math.min(2, this.connections.length); i++) {
+        let connected = this.connections[i];
+        line(this.x, this.y, connected.x, connected.y);
       }
     }
-  }
-  
-  drawVoid() {
-    // Negative space - draw outline only
-    stroke(255, this.opacity * 0.3);
-    strokeWeight(1);
-    noFill();
-    box(this.size);
-  }
-  
-  drawColumn() {
-    // Cylindrical column
-    fill(220, 200, 180, this.opacity);
+    
+    // Main particle
     noStroke();
-    
-    push();
-    rotateX(HALF_PI);
-    cylinder(this.size * 0.4, this.size * 1.5);
-    pop();
-    
-    // Capital and base
-    fill(240, 220, 200, this.opacity);
-    translate(0, -this.size * 0.8, 0);
-    box(this.size * 0.8, this.size * 0.2, this.size * 0.8);
-    translate(0, this.size * 1.6, 0);
-    box(this.size * 0.8, this.size * 0.2, this.size * 0.8);
-  }
-  
-  drawArch() {
-    // Simplified arch structure
-    stroke(200, 180, 160, this.opacity);
-    strokeWeight(3);
-    noFill();
-    
-    // Arch curve
-    beginShape();
-    for (let angle = 0; angle < PI; angle += 0.1) {
-      let x = cos(angle) * this.size * 0.5;
-      let y = sin(angle) * this.size * 0.5;
-      vertex(x, -y, 0);
-    }
-    endShape();
-    
-    // Supporting pillars
-    line(-this.size * 0.5, 0, 0, -this.size * 0.5, this.size, 0);
-    line(this.size * 0.5, 0, 0, this.size * 0.5, this.size, 0);
+    fill(255, 255, 255, twinkleAlpha);
+    circle(this.x, this.y, twinkleSize);
   }
   
   isDead() {
-    return this.opacity <= 0;
+    return this.life <= 0;
+  }
+  
+  findConnections(allParticles) {
+    // Only check last 50 particles
+    let recentParticles = allParticles.slice(-50);
+    
+    for (let other of recentParticles) {
+      if (other !== this && this.word === other.word && this.connections.length < 3) {
+        if (!this.connections.includes(other)) {
+          this.connections.push(other);
+          other.connections.push(this);
+        }
+      }
+    }
   }
 }
 
-// ===== ARCHITECTURAL SYSTEM CLASS =====
-class ArchitecturalSystem {
+//PARTICLE SYSTEM CLASS
+class WordParticleSystem {
   constructor() {
-    this.blocks = [];
+    this.particles = [];
     this.totalWordCount = 0;
-    this.structureHeight = 0;
-    this.gridSize = 30;
-    this.centerX = 0;
-    this.centerY = 0;
-    this.buildingLayers = [];
-    this.currentLayer = 0;
-    
-    // Initialize first layer
-    this.buildingLayers.push(new Set());
   }
   
   addWord(word, x, y) {
+    // Skip very short words
     if (word.length < 3) return;
     
-    // Convert word characteristics to architectural decisions
-    let blockType = this.determineBlockType(word);
-    let size = map(word.length, 3, 15, 15, 35);
+    // Ensure the particle starts within the circular boundary
+    let centerX = width / 2;
+    let centerY = height / 2;
+    let maxRadius = min(width, height) / 2 - 10;
     
-    // Grid-based positioning for architectural coherence
-    let gridX = Math.round(x / this.gridSize) * this.gridSize;
-    let gridY = Math.round(y / this.gridSize) * this.gridSize;
-    let gridZ = this.structureHeight;
-    
-    // Check if position is already occupied
-    let positionKey = `${gridX},${gridY},${gridZ}`;
-    if (this.buildingLayers[this.currentLayer].has(positionKey)) {
-      // Find adjacent empty space
-      let adjacent = this.findAdjacentSpace(gridX, gridY, gridZ);
-      if (adjacent) {
-        gridX = adjacent.x;
-        gridY = adjacent.y;
-        gridZ = adjacent.z;
-        positionKey = `${gridX},${gridY},${gridZ}`;
-      }
+    let distanceFromCenter = dist(x, y, centerX, centerY);
+    if (distanceFromCenter > maxRadius) {
+      // If outside circle, place at a random position within the circle
+      let angle = random(TWO_PI);
+      let radius = random(maxRadius * 0.7); // Keep away from edges initially
+      x = centerX + cos(angle) * radius;
+      y = centerY + sin(angle) * radius;
     }
     
-    let block = new ArchitecturalBlock(gridX, gridY, gridZ, size, blockType);
-    this.blocks.push(block);
+    let particle = new WordParticle(word, x, y);
+    this.particles.push(particle);
     this.totalWordCount++;
     
-    // Add to current layer
-    this.buildingLayers[this.currentLayer].add(positionKey);
+    // Find connections after adding
+    particle.findConnections(this.particles);
     
-    // Check if we need a new layer
-    if (this.buildingLayers[this.currentLayer].size > 20) {
-      this.currentLayer++;
-      this.structureHeight -= this.gridSize;
-      this.buildingLayers.push(new Set());
+    // Limit total particles for performance
+    if (this.particles.length > 2000) {
+      this.particles.splice(0, 100);
     }
     
-    // Limit total blocks
-    if (this.blocks.length > 300) {
-      this.blocks.splice(0, 50);
-    }
-    
-    return block;
-  }
-  
-  determineBlockType(word) {
-    // Word characteristics determine architecture
-    let vowels = (word.match(/[aeiou]/g) || []).length;
-    let consonants = word.length - vowels;
-    
-    if (vowels > consonants) return 'void';
-    if (word.length > 8) return 'column';
-    if (word.includes('and') || word.includes('or')) return 'arch';
-    return 'stone';
-  }
-  
-  findAdjacentSpace(x, y, z) {
-    let directions = [
-      {x: this.gridSize, y: 0, z: 0},
-      {x: -this.gridSize, y: 0, z: 0},
-      {x: 0, y: this.gridSize, z: 0},
-      {x: 0, y: -this.gridSize, z: 0},
-      {x: 0, y: 0, z: -this.gridSize}
-    ];
-    
-    for (let dir of directions) {
-      let newX = x + dir.x;
-      let newY = y + dir.y;
-      let newZ = z + dir.z;
-      let key = `${newX},${newY},${newZ}`;
-      
-      if (!this.buildingLayers[this.currentLayer].has(key)) {
-        return {x: newX, y: newY, z: newZ};
-      }
-    }
-    return null;
+    return particle;
   }
   
   addTextExplosion(text, x, y) {
     let words = text.match(/\b\w+\b/g) || [];
     
+    // Ensure explosion center is within circular boundary
+    let centerX = width / 2;
+    let centerY = height / 2;
+    let maxRadius = min(width, height) / 2 - 50; // Leave more room for explosion spread
+    
+    let distanceFromCenter = dist(x, y, centerX, centerY);
+    if (distanceFromCenter > maxRadius) {
+      let angle = atan2(y - centerY, x - centerX);
+      x = centerX + cos(angle) * maxRadius;
+      y = centerY + sin(angle) * maxRadius;
+    }
+    
     for (let word of words) {
       if (word.length >= 3) {
-        // Architectural spread pattern
+        // Spread particles around the point, but keep within circular boundary
         let angle = random(TWO_PI);
-        let distance = random(this.gridSize, this.gridSize * 3);
+        let distance = random(10, 40);
         let wordX = x + cos(angle) * distance;
         let wordY = y + sin(angle) * distance;
         
-        // Keep within canvas bounds
-        wordX = constrain(wordX, -width/2 + 50, width/2 - 50);
-        wordY = constrain(wordY, -height/2 + 50, height/2 - 50);
-        
+        // The addWord method will handle circular boundary constraints
         this.addWord(word, wordX, wordY);
       }
     }
   }
   
+  // do something in response to the page turn
+  handlePageTurn() {
+    // Remove oldest (index 0) particles if there are more than one
+    if (this.particles.length > 1) {
+      let particle = this.particles[0];
+      // Remove from connections
+      for (let connected of particle.connections) {
+        let index = connected.connections.indexOf(particle);
+        if (index > -1) {
+          connected.connections.splice(index, 1);
+        }
+      }
+      this.particles.splice(0, 1);
+    }    
+  }
+  
   update() {
-    for (let i = this.blocks.length - 1; i >= 0; i--) {
-      let block = this.blocks[i];
-      block.update();
+    // Update all particles
+    for (let i = this.particles.length - 1; i >= 0; i--) {
+      let particle = this.particles[i];
+      particle.update();
       
-      if (block.isDead()) {
-        this.blocks.splice(i, 1);
+      // Remove dead particles
+      if (particle.isDead()) {
+        // Remove from connections
+        for (let connected of particle.connections) {
+          let index = connected.connections.indexOf(particle);
+          if (index > -1) {
+            connected.connections.splice(index, 1);
+          }
+        }
+        this.particles.splice(i, 1);
       }
     }
   }
   
   display() {
-    // Set up 3D view
-    push();
-    translate(width/2, height/2, 0);
+    // Optional: Draw the circular boundary for reference
+    // stroke(255, 50);
+    // strokeWeight(1);
+    // noFill();
+    // circle(width/2, height/2, min(width, height) - 20);
     
-    // Slow rotation for better viewing
-    rotateY(frameCount * 0.003);
-    rotateX(-0.3);
-    
-    // Draw all blocks
-    for (let block of this.blocks) {
-      block.display();
-    }
-    
-    // Draw connecting elements between nearby blocks
-    this.drawConnections();
-    
-    pop();
-  }
-  
-  drawConnections() {
-    stroke(255, 30);
-    strokeWeight(1);
-    
-    for (let i = 0; i < this.blocks.length; i++) {
-      let block = this.blocks[i];
-      
-      // Find nearby blocks for connections
-      for (let j = i + 1; j < this.blocks.length; j++) {
-        let other = this.blocks[j];
-        let distance = dist(block.x, block.y, block.z, other.x, other.y, other.z);
-        
-        if (distance < this.gridSize * 2 && distance > 0) {
-          // Draw connecting lines (like structural supports)
-          line(block.x, block.y, block.z, other.x, other.y, other.z);
+    // Draw connections first
+    stroke(255, 60);
+    strokeWeight(0.5);
+    for (let particle of this.particles) {
+      for (let connected of particle.connections) {
+        let distance = dist(particle.x, particle.y, connected.x, connected.y);
+        if (distance < 60) { // Only draw close connections
+          line(particle.x, particle.y, connected.x, connected.y);
         }
       }
     }
+    
+    // Draw particles
+    for (let particle of this.particles) {
+      particle.display();
+    }
   }
   
-  getBlockCount() {
-    return this.blocks.length;
+  getParticleCount() {
+    return this.particles.length;
   }
   
   getTotalWordCount() {
@@ -323,74 +264,83 @@ class ArchitecturalSystem {
 }
 
 // ===== MAIN SKETCH =====
-console.log("Setting up architectural visualization...");
+console.log("Setting up global variables...");
 
+// Connect to the same server
 const socket = io();
 let connected = false;
-let architecturalSystem;
+let particleSystem;
 let currentText = "";
 
 function setup() {
-  createCanvas(600, 600, WEBGL);
-  console.log("3D Canvas created");
+  createCanvas(600, 600);
+  console.log("Canvas created");
   
-  architecturalSystem = new ArchitecturalSystem();
-  console.log("Architectural system created");
+  particleSystem = new WordParticleSystem();
+  console.log("Particle system created");
 }
 
 function draw() {
-  background(10, 15, 20); // Dark atmospheric background
+background(0, 30); // Trail effect
   
-  // Ambient lighting for 3D effect
-  ambientLight(60, 60, 80);
-  directionalLight(200, 200, 200, -1, 0.5, -1);
-  
-  // Update and display architectural system
-  architecturalSystem.update();
-  architecturalSystem.display();
-  
-  // Draw stats (in 2D overlay)
-  camera();
+  // Draw stats
   fill(255, 150);
-  textAlign(LEFT);
-  textSize(12);
-  text('Blocks: ' + architecturalSystem.getBlockCount(), -width/2 + 20, -height/2 + 30);
-  text('Words: ' + architecturalSystem.getTotalWordCount(), -width/2 + 20, -height/2 + 50);
+  //check word count and particle count
+//   textAlign(LEFT);
+//   textSize(16);
+//   text('Words: ' + particleSystem.getTotalWordCount(), 20, 30);
+//   text('Particles: ' + particleSystem.getParticleCount(), 20, 50);
+  
+  // Update and display particle system
+  particleSystem.update();
+  particleSystem.display();
 }
 
 // Socket events
 socket.on('connect', () => {
   connected = true;
-  console.log('Architectural visualization connected to server');
+  console.log('Word web visualization connected to server');
 });
 
 socket.on('book-data', (data) => {
-  console.log('Architectural sketch received book data:', data);
+  console.log('Ghost sketch received book data:', data);
   
   if (data.type === 'new-text') {
     currentText = data.content;
     
-    // Create architectural expansion at center
-    let x = random(-100, 100);
-    let y = random(-100, 100);
-    architecturalSystem.addTextExplosion(data.content, x, y);
+    // Create explosion of words at random position within circular boundary
+    let centerX = width / 2;
+    let centerY = height / 2;
+    let maxRadius = min(width, height) / 2 - 60; // Leave room for explosion spread
+    
+    let angle = random(TWO_PI);
+    let radius = random(maxRadius * 0.5); // Keep explosions more toward center
+    let x = centerX + cos(angle) * radius;
+    let y = centerY + sin(angle) * radius;
+    
+    particleSystem.addTextExplosion(data.content, x, y);
     
     // Send acknowledgment back to main sketch
     socket.emit('sketch-sync', {
-      type: 'architectural-received',
+      type: 'ghost-received',
       promptIndex: data.promptIndex,
-      totalWords: architecturalSystem.getTotalWordCount(),
-      totalBlocks: architecturalSystem.getBlockCount()
+      totalWords: particleSystem.getTotalWordCount()
     });
   }
 });
 
+socket.on('page-turn-update', (data) => {
+  console.log('Ghost sketch received page turn update:', data);
+  particleSystem.handlePageTurn(data);
+}); 
+    
+
 socket.on('disconnect', () => {
   connected = false;
-  console.log('Architectural visualization disconnected');
+  console.log('Word web visualization disconnected');
 });
 
-console.log("Architectural sketch setup complete");
+console.log("Ghost sketch setup complete");
 
 function mousePressed() {
   if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
