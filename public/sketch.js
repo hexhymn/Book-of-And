@@ -3,11 +3,12 @@
 //Savannah Perry
 
 // reference sketch: AUTHENICATED-OPENAI-CHAT-GPT from class
-// reference sketch: Jeremie Wenger p5.GPT https://github.com/jchwenger/p5.GPT/tree/master
+// based on a sketch by Jeremie Wenger p5.GPT https://github.com/jchwenger/p5.GPT/tree/master
 
 // Create connection to Node.JS Server
 const socket = io();
 let connected = false;
+let isLoading = false; // Add loading state variable
 
 // Initialize variables
 
@@ -65,7 +66,10 @@ function setup() {
       console.log("Adding event listener to previous button");
       prevButton.addEventListener('click', () => {
         console.log("Previous button clicked!");
-        sendMessage("backward");
+        if (!isLoading) { // Prevent multiple clicks while loading
+          showLoadingMessage(); // Show loading immediately
+          sendMessage("backward");
+        }
       });
     } else {
       console.error("Previous button not found!");
@@ -75,7 +79,10 @@ function setup() {
       console.log("Adding event listener to next button");
       nextButton.addEventListener('click', () => {
         console.log("Next button clicked!");
-        sendMessage("forward");
+        if (!isLoading) { // Prevent multiple clicks while loading
+          showLoadingMessage(); // Show loading immediately
+          sendMessage("forward");
+        }
       });
     } else {
       console.error("Next button not found!");
@@ -87,6 +94,30 @@ function setup() {
 
 function tokensInput(){
   tokensLabel.elt.innerHTML = numTokens.value();
+}
+
+// NEW: Function to show loading message immediately
+function showLoadingMessage() {
+  isLoading = true;
+  let messageArea = select(".messages");
+  messageArea.html(""); // Clear previous message
+
+  let messageDiv = createDiv("");
+  messageDiv.parent(messageArea);
+  messageDiv.addClass("message");
+  messageDiv.addClass("loading"); // Add loading class for styling
+
+  let userNameSpan = createSpan("entry: ");
+  userNameSpan.parent(messageDiv);
+  userNameSpan.addClass("username");
+
+  let messageBodySpan = createSpan("loading...");
+  messageBodySpan.parent(messageDiv);
+  messageBodySpan.addClass("messageBody");
+  messageBodySpan.addClass("loading-text"); // Add loading text class
+
+  // Scroll to bottom
+  messageArea.elt.parentElement.scrollTop = messageArea.elt.parentElement.scrollHeight;
 }
 
 // Sends a chat message
@@ -136,6 +167,12 @@ function sendMessage(direction){
      _currentPromptIndex: currentPrompt, 
      _direction: direction
    });
+   
+   // Also emit the event that ghost sketch is listening for
+   socket.emit('page-turn-update', {
+     currentPromptIndex: currentPrompt, 
+     direction: direction
+   });
  
    // NEW: Include current prompt index for ghost sketch
    socket.emit('chat', {
@@ -149,6 +186,7 @@ function sendMessage(direction){
 
 // Adds the visual chat message to the message list
 function addChatMessage(data) {
+  isLoading = false; // Reset loading state when message arrives
   let messageArea = select(".messages"); // Select message container
 
   messageArea.html("");
@@ -168,8 +206,10 @@ function addChatMessage(data) {
   //apply typing effect
   typeEffect(messageBodySpan.elt, data.message);
 
-  //message container scrolls to the top
-  messageArea.elt.parentElement.scrollTop = 0;
+  //message container scrolls to the bottom to show all content
+  setTimeout(() => {
+    messageArea.elt.parentElement.scrollTop = messageArea.elt.parentElement.scrollHeight;
+  }, 100);
 }
 
 //chat GPT helped me figure out how to clear the previous message so it refreshes with every entry or 'page turn'
@@ -190,6 +230,18 @@ function typeEffect(element, text, speed = 30) { // typing speed
       element.innerHTML += text.charAt(i);
       i++;
       setTimeout(type, speed);
+      
+      // Scroll to bottom as text is being typed to keep up with content
+      const messageArea = element.closest('.message-scroll');
+      if (messageArea && i % 20 === 0) { // Update scroll every 20 characters for performance
+        messageArea.scrollTop = messageArea.scrollHeight;
+      }
+    } else {
+      // Final scroll to bottom when typing is complete
+      const messageArea = element.closest('.message-scroll');
+      if (messageArea) {
+        messageArea.scrollTop = messageArea.scrollHeight;
+      }
     }
   }
 
@@ -207,10 +259,12 @@ function cleanInput(input){
 
 //if button pressed sendMessage() 
 function keyPressed(){
-  if (keyCode === RIGHT) {
+  if (keyCode === RIGHT && !isLoading) { // Prevent key presses while loading
+    showLoadingMessage(); // Show loading immediately
     sendMessage("forward");
   }
-  else if (keyCode === LEFT){  // Fixed: was =
+  else if (keyCode === LEFT && !isLoading){  // Prevent key presses while loading
+    showLoadingMessage(); // Show loading immediately
     sendMessage("backward");
   }
 }

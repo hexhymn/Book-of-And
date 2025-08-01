@@ -15,18 +15,18 @@ html, body {
 main {
   display: flex;
   flex-direction: column;
-  align-items: center;
   width: 100%;
-  height: 100vh; /* Fixed height */
-  overflow: hidden; /* Prevent main from expanding */
-  padding: 20px;
+  height: 100vh;
+  overflow: hidden;
+  padding: 0; /* Remove all padding */
+  margin: 0;
   box-sizing: border-box;
 }
 
 /* prompt-container */
 #prompt-container {
   width: 100%;
-  height: 20vh;
+  height: auto; /* Let it size naturally */
   padding: 20px;
   text-align: center;
   border-bottom: 2px solid black;
@@ -38,11 +38,14 @@ main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 50%;
+  width: 100%;
+  max-width: 50%;
+  margin: 0 auto;
   padding: 15px 20px;
   border-top: 2px solid white;
   border-bottom: 2px solid white;
   background: black;
+  flex-shrink: 0;
 }
 
 .navigation-title {
@@ -75,19 +78,29 @@ main {
   transform: translateY(0);
 }
 
-/* message-container with fixed height but allows inner scrolling */
+/* Disable buttons while loading */
+.nav-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: transparent;
+  color: white;
+  transform: none;
+}
+
+/* message-container with flexible height */
 #message-container {
-  width: 50%;
-  height: 70vh; /* Fixed height */
-  min-height: 70vh; /* Minimum height */
-  max-height: 70vh; /* Maximum height - this is crucial */
-  padding: 0; /* Remove padding to let inner element handle it */
+  width: 100%;
+  max-width: 50%;
+  margin: 0 auto;
+  flex: 1; /* Take up all remaining space */
+  padding: 0;
   background-color: black;
-  overflow: hidden; /* Prevent container expansion */
-  border-top: none; /* Removed since navigation bar has border */
+  overflow: hidden;
+  border-top: none;
   box-sizing: border-box;
   position: relative;
-  flex-shrink: 0; /* Prevent shrinking */
+  display: flex;
+  flex-direction: column;
 }
 
 /* system-prompt Input */
@@ -107,7 +120,7 @@ main {
   overflow-y: auto; /* Enable vertical scrolling HERE */
   overflow-x: hidden; /* Hide horizontal overflow */
   padding: 15px; /* Move padding here */
-  padding-bottom: 80px; /* Extra padding at bottom for input box */
+  padding-bottom: 15px; /* Reduced padding since no input box */
   box-sizing: border-box;
   margin: 0;
 }
@@ -123,6 +136,29 @@ main {
 /* typing indicator */
 .message.typing .messageBody {
   color: gray;
+}
+
+/* Loading state styles */
+.message.loading .messageBody {
+  color: #888;
+  font-style: italic;
+}
+
+.loading-text {
+  opacity: 0.7;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0.7;
+  }
 }
 
 /* username */
@@ -146,8 +182,9 @@ main {
   line-height: 1.6;
 }
 
-/* input message */
+/* input message - hidden but still functional */
 #input-message {
+  display: none; /* Hide the input box */
   font-size: 90%;
   border: none;
   border-top: 2px solid white;
@@ -166,24 +203,21 @@ main {
 @media screen and (max-width: 750px) {
   #prompt-container {
     width: 100%;
-    height: auto;
     padding: 10px;
   }
 
   .navigation-bar {
     width: 100%;
+    max-width: 100%;
     padding: 10px;
   }
 
   #message-container {
-    height: 60vh;
-    min-height: 60vh;
-    max-height: 60vh;
-    border-top: none;
+    max-width: 100%;
     width: 100%;
   }
   
   .message-scroll {
-    padding-bottom: 80px; /* Ensure mobile also has enough space */
+    padding-bottom: 15px;
   }
 }
