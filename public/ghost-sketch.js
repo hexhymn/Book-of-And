@@ -1,4 +1,6 @@
-console.log("Architectural Ghost sketch loading...");
+const socket = io(); // This will automatically connect to the same domain
+// 
+// console.log("Architectural Ghost sketch loading...");
 
 // ===== ARCHITECTURAL BLOCK CLASS =====
 class ArchitecturalBlock {

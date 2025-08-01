@@ -31,7 +31,7 @@ app.get('/ghost', (req, res) => {
 });
 
 // Setup Our Node.js server to listen at that port.
-server.listen(port, () => {
+server.listen(port, '0.0.0.0', () => {
   console.log('Listening at port %d', port);
   // Remove open() call since it's not needed on Glitch
   // open(`http://localhost:${port}`);//opens in your default browser
