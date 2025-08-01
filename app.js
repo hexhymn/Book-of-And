@@ -20,6 +20,18 @@ const port = process.env.PORT || 4444; // Use Glitch's port or fallback to 4444
 // Tell our Node.js Server to host our P5.JS sketch from the public folder.
 app.use(express.static("public"));
 
+// Basic health check - put this FIRST
+app.get('/health', (req, res) => {
+  console.log('Health check accessed');
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Root route
+app.get('/', (req, res) => {
+  console.log('Root route accessed');
+  res.sendFile(__dirname + '/public/index.html');
+});
+
 // Route for main app
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
@@ -40,11 +52,18 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-// Setup Our Node.js server to listen at that port.
+// Make sure server listens on all interfaces
 server.listen(port, '0.0.0.0', () => {
-  console.log('Listening at port %d', port);
-  // Remove open() call since it's not needed on Glitch
-  // open(`http://localhost:${port}`);//opens in your default browser
+  console.log(`Server listening on 0.0.0.0:${port}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Process terminated');
+  });
 });
 
 io.on('connection', (socket) => {
