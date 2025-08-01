@@ -20,6 +20,16 @@ const port = process.env.PORT || 4444; // Use Glitch's port or fallback to 4444
 // Tell our Node.js Server to host our P5.JS sketch from the public folder.
 app.use(express.static("public"));
 
+// Route for main app
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
+});
+
+// Route for ghost app
+app.get('/ghost', (req, res) => {
+  res.sendFile(__dirname + '/public/ghost.html');
+});
+
 // Setup Our Node.js server to listen at that port.
 server.listen(port, () => {
   console.log('Listening at port %d', port);
