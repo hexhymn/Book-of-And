@@ -30,6 +30,16 @@ app.get('/ghost', (req, res) => {
   res.sendFile(__dirname + '/public/ghost.html');
 });
 
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
+// Also add error handling
+app.use((err, req, res, next) => {
+  console.error('Express error:', err);
+  res.status(500).send('Something broke!');
+});
+
 // Setup Our Node.js server to listen at that port.
 server.listen(port, '0.0.0.0', () => {
   console.log('Listening at port %d', port);
