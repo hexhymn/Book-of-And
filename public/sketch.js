@@ -20,16 +20,33 @@ let systemPrompt;
 let numTokens;
 let tokensLabel;
 
+// ===== ADD THESE NEW VARIABLES HERE =====
+// Memory system variables
+let conversationHistory = []; // Store the full conversation
+let lastGeneratedText = ""; // Store just the last response
+let maxHistoryLength = 3; // Keep last 3 exchanges for context
+// ===== END NEW VARIABLES =====
+
 //declare individual system prompts
-let sprompt1 = "Write a paragraph about a moment of passage between spaces, focusing on sensory details and the subtle psychological shift that occurs when crossing thresholds. Include one unexpected detail that creates intrigue.";
-let sprompt2 = "Describe in rich, atmospheric prose the moment of encountering something unexpected. Begin with a small detail before revealing the larger significance. End with a sentence that suggests deeper implications.";
-let sprompt3 = "Write about someone noticing recurring motifs or symbols in their environment. Use metaphorical language to suggest these patterns hold meaning beyond coincidence. Include both visual and non-visual patterns.";
-let sprompt4 = "Compose a passage about a sudden shift in perception that reveals something previously unseen. Use contrasting imagery before and after the shift. End with an insight or question that lingers.";
-let sprompt5 = "Create a paragraph where temporal boundaries blur. Use sensory details to evoke at least two different time periods simultaneously. Include one reference to something ancient and one to something ephemeral.";
-let sprompt6 = "Write about sounds or impressions that suggest other presences. Use varied sentence lengths with shorter sentences for immediate sounds and longer, flowing sentences for distant ones. Include one moment of silence among the echoes.";
-let sprompt7 = "Describe how a change in light transforms a space and its occupant's perception. Begin in relative darkness and transition to illumination (or vice versa). Use color specifically and intentionally.";
-let sprompt8 = "Craft a passage revealing how seemingly unrelated elements are interconnected. Begin with separate observations that gradually converge. Use one extended metaphor throughout that reinforces the theme of connection.";
-let sprompt9 = "Write about subtle changes that suggest continuous flux. Focus on minute details that signal broader transformations. Begin and end with parallel structures that themselves show variation.";
+// ===== REPLACE YOUR EXISTING PROMPTS WITH THESE IMPROVED ONES =====
+let sprompt1 = "The protagonist crosses a threshold into a new space. Describe the tactile sensation of the doorway, the change in air pressure, temperature, or acoustics. What do their hands touch? What do their feet feel? Include one architectural impossibility that suggests this structure defies normal geometry.";
+
+let sprompt2 = "The protagonist discovers something unexpected embedded in the walls, floor, or ceiling of this space. Begin with their eyes catching a small detail, then reveal its larger significance. This object or marking suggests someone else has been here before. End with a realization about the nature of this place.";
+
+let sprompt3 = "The protagonist notices patterns repeating throughout this space - in the wallpaper, tile work, or shadows. These patterns seem to shift when not directly observed. Include the protagonist's growing awareness that these motifs might be a form of communication or navigation system within the structure.";
+
+let sprompt4 = "A sudden change in lighting transforms how the protagonist perceives this space. Perhaps a window appears where none existed, or existing light sources change color or intensity. This illumination reveals architectural details previously hidden and suggests the building itself is somehow alive or responsive.";
+
+let sprompt5 = "Time behaves strangely in this space. The protagonist experiences temporal displacement - hearing echoes of conversations from other eras, seeing glimpses of the room as it was or will be. Include sensory details from at least two time periods simultaneously. The architecture itself seems to be a palimpsest of different ages.";
+
+let sprompt6 = "The protagonist hears sounds suggesting other inhabitants of this infinite structure - footsteps above, voices through walls, or the distant operation of machinery. Use varied sentence rhythms to mirror the sounds described. Include one moment of profound silence that makes the protagonist question what they're truly hearing.";
+
+let sprompt7 = "The protagonist finds a staircase, corridor, or passage that seems to lead impossibly upward, downward, or in directions that shouldn't exist. As they begin to traverse it, describe how their sense of orientation becomes confused. The passage itself seems to be writing them into a new chapter of the structure.";
+
+let sprompt8 = "The protagonist realizes that their path through the building is somehow connected to paths taken by others - perhaps they find evidence of previous travelers, or the rooms seem to be responding to their emotional state. Use metaphor to suggest the building is reading them as much as they are reading it.";
+
+let sprompt9 = "The space the protagonist now occupies shows subtle signs of continuous change - walls that seem slightly different than moments before, furniture that has shifted position, or new passages that weren't there previously. Begin and end with parallel descriptions that show how even language itself shifts within this living labyrinth.";
+// ===== END PROMPT REPLACEMENTS =====
 
 //declare array of system prompts
 let systemPrompts =[sprompt1,sprompt2,sprompt3,sprompt4,sprompt5,sprompt6,sprompt7,sprompt8,sprompt9];
@@ -120,10 +137,21 @@ function showLoadingMessage() {
   messageArea.elt.parentElement.scrollTop = messageArea.elt.parentElement.scrollHeight;
 }
 
+// ===== REPLACE YOUR ENTIRE sendMessage FUNCTION WITH THIS ONE =====
 // Sends a chat message
 function sendMessage(direction){
-  let prompt = inputMessage.value();
-  console.log("HELLLOOOOOOO",prompt);
+  // ===== THIS IS THE KEY CHANGE - BUILD CONTEXT FROM PREVIOUS RESPONSE =====
+  let prompt = "";
+  
+  // Build prompt with previous context
+  if (lastGeneratedText) {
+    prompt = `Previous passage: "${lastGeneratedText}"\n\nContinue the story seamlessly from where it left off.`;
+  } else {
+    prompt = "Begin a new story.";
+  }
+  // ===== END KEY CHANGE =====
+
+  console.log("Sending prompt with context:", prompt);
 
   //if system prompt has no text in it just say "be helpful" by default
   let system_prompt = (systemPrompt.value() === "")? "Be helpful" : systemPrompt.value();
@@ -149,15 +177,21 @@ function sendMessage(direction){
  
    let systemPrompt = systemPrompts[currentPrompt];
 
+   // ===== ENHANCED CONTINUITY INSTRUCTIONS =====
    //in addition to each prompt
    //hold coninuity with the last prompt response
-   systemPrompt += " in continuity with the last response written, furthering plot, as though you are continuing to tell the next page of a story with each prompt";
+   systemPrompt += " Continue the narrative seamlessly, maintaining the same protagonist and spatial context.";
+   systemPrompt += " The reader is physically moving through an impossible architectural space.";
+   systemPrompt += " Each passage should feel like stepping into a new room or corridor of an infinite structure.";
    //limit the response to 30 words
-   systemPrompt += " do not write more than 3 paragraphs";
+   systemPrompt += " Write no more than 3 paragraphs.";
    //adjust language style
-   systemPrompt += " written in a style inspired by classic literature";
-   systemPrompt += " written as though you are narrating the reader through a space";
-   systemPrompt += " the last sentence is always complete with punctuation at the end";
+   systemPrompt += " Write in a style inspired by Borges, Calvino, or Danielewski.";
+   systemPrompt += " Write as though you are narrating the reader through a space.";
+   systemPrompt += " The architecture itself is alive, responsive, and self-writing.";
+   systemPrompt += " The last sentence is always complete with punctuation at the end.";
+   // ===== END ENHANCED INSTRUCTIONS =====
+   
    let maxTokens = 300; //enough tokens for a full page
    
    // send page and direction updates to ghost sketch before 'chat' 
@@ -174,15 +208,18 @@ function sendMessage(direction){
      direction: direction
    });
  
-   // NEW: Include current prompt index for ghost sketch
+   // ===== UPDATED CHAT EMIT WITH CONTEXT =====
    socket.emit('chat', {
-     _prompt: prompt, 
+     _prompt: prompt,  // NOW THIS CONTAINS THE PREVIOUS STORY CONTEXT!
      _system_prompt: systemPrompt, 
      _max_tokens: maxTokens,
-     _current_prompt: currentPrompt  // Add this line
+     _current_prompt: currentPrompt,
+     _history: conversationHistory.slice(-maxHistoryLength) // Send recent history
    });
+   // ===== END UPDATED EMIT =====
   }
 }
+// ===== END sendMessage REPLACEMENT =====
 
 // Adds the visual chat message to the message list
 function addChatMessage(data) {
@@ -286,12 +323,34 @@ socket.on('reconnect', () => {
   console.log('you have recconnected');
 });
 
+// ===== REPLACE YOUR EXISTING 'new message' HANDLER WITH THIS ONE =====
 // when server emits 'new message', update the chat body
 socket.on('new message', (data) => {
-  console.log(data);
+  console.log("Received new message:", data);
+  
+  // ===== STORE THE RESPONSE FOR CONTINUITY =====
+  // Store the generated text for continuity
+  lastGeneratedText = data;
+  
+  // Add to conversation history
+  conversationHistory.push({
+    prompt: currentPrompt,
+    response: data,
+    timestamp: Date.now()
+  });
+  
+  // Limit history size to prevent token overflow
+  if (conversationHistory.length > maxHistoryLength * 2) {
+    conversationHistory = conversationHistory.slice(-maxHistoryLength);
+  }
+  
+  console.log("Updated conversation history:", conversationHistory);
+  // ===== END STORAGE CODE =====
+  
   let message = { username: "entry: ", message: data };
   addChatMessage(message);
 });
+// ===== END REPLACEMENT =====
 
 // listen for updates from ghost sketch
 socket.on('sketch-update', (data) => {
