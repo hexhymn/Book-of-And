@@ -222,6 +222,7 @@ function sendMessage(direction){
 // ===== END sendMessage REPLACEMENT =====
 
 // Adds the visual chat message to the message list
+// MODIFY your addChatMessage function to use the new effect
 function addChatMessage(data) {
   isLoading = false; // Reset loading state when message arrives
   let messageArea = select(".messages"); // Select message container
@@ -240,18 +241,9 @@ function addChatMessage(data) {
   messageBodySpan.parent(messageDiv);
   messageBodySpan.addClass("messageBody");
 
-  //apply typing effect
-  typeEffect(messageBodySpan.elt, data.message);
-
-  //message container scrolls to the bottom to show all content
-  setTimeout(() => {
-    messageArea.elt.parentElement.scrollTop = messageArea.elt.parentElement.scrollHeight;
-  }, 100);
-}
-
 //chat GPT helped me figure out how to clear the previous message so it refreshes with every entry or 'page turn'
 // and maintain typing effect
-function typeEffect(element, text, speed = 30) { // typing speed
+function progressiveTypeEffect(element, text, speed = 50) {
   element.innerHTML = ""; // Clear existing text
   
   // Ensure container height remains fixed during typing
@@ -259,6 +251,56 @@ function typeEffect(element, text, speed = 30) { // typing speed
   if (messageContainer) {
     messageContainer.style.height = '70vh';
   }
+  
+  // Split text into words for more natural chunking
+  const words = text.split(' ');
+  let currentWordIndex = 0;
+  let displayedText = '';
+
+  function typeNextWord() {
+    if (currentWordIndex < words.length) {
+      // Add the next word
+      displayedText += (currentWordIndex > 0 ? ' ' : '') + words[currentWordIndex];
+      element.innerHTML = displayedText;
+      currentWordIndex++;
+      
+      // Variable timing based on word length and punctuation
+      let nextDelay = speed;
+      
+      // Longer pause after punctuation
+      if (words[currentWordIndex - 1]?.match(/[.!?]$/)) {
+        nextDelay = speed * 3;
+      }
+      // Shorter pause after commas
+      else if (words[currentWordIndex - 1]?.match(/[,;:]$/)) {
+        nextDelay = speed * 1.5;
+      }
+      // Faster for short words
+      else if (words[currentWordIndex - 1]?.length <= 3) {
+        nextDelay = speed * 0.7;
+      }
+      
+      setTimeout(typeNextWord, nextDelay);
+      
+      // Scroll to bottom periodically
+      if (currentWordIndex % 5 === 0) {
+        const messageArea = element.closest('.message-scroll');
+        if (messageArea) {
+          messageArea.scrollTop = messageArea.scrollHeight;
+        }
+      }
+    } else {
+      // Final scroll to bottom when complete
+      const messageArea = element.closest('.message-scroll');
+      if (messageArea) {
+        messageArea.scrollTop = messageArea.scrollHeight;
+      }
+    }
+  }
+
+  typeNextWord();
+}
+
   
   let i = 0;
 
