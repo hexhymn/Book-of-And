@@ -1,5 +1,5 @@
 //The Book of And
-//May 2025
+//August 2025
 //Savannah Perry
 
 // reference sketch: AUTHENICATED-OPENAI-CHAT-GPT from class
