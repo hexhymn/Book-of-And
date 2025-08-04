@@ -20,15 +20,16 @@ let systemPrompt;
 let numTokens;
 let tokensLabel;
 
-// ===== ADD THESE NEW VARIABLES HERE =====
 // Memory system variables
 let conversationHistory = []; // Store the full conversation
 let lastGeneratedText = ""; // Store just the last response
 let maxHistoryLength = 3; // Keep last 3 exchanges for context
-// ===== END NEW VARIABLES =====
 
-//declare individual system prompts
-// ===== REPLACE YOUR EXISTING PROMPTS WITH THESE IMPROVED ONES =====
+// Page regeneration system
+let pageContexts = {}; // Store the context for each page so we can regenerate it
+let currentPageKey = ""; // Track which page we're currently on
+
+//declare individual system prompts - enhanced for spatial navigation
 let sprompt1 = "The protagonist crosses a threshold into a new space. Describe the tactile sensation of the doorway, the change in air pressure, temperature, or acoustics. What do their hands touch? What do their feet feel? Include one architectural impossibility that suggests this structure defies normal geometry.";
 
 let sprompt2 = "The protagonist discovers something unexpected embedded in the walls, floor, or ceiling of this space. Begin with their eyes catching a small detail, then reveal its larger significance. This object or marking suggests someone else has been here before. End with a realization about the nature of this place.";
@@ -46,7 +47,6 @@ let sprompt7 = "The protagonist finds a staircase, corridor, or passage that see
 let sprompt8 = "The protagonist realizes that their path through the building is somehow connected to paths taken by others - perhaps they find evidence of previous travelers, or the rooms seem to be responding to their emotional state. Use metaphor to suggest the building is reading them as much as they are reading it.";
 
 let sprompt9 = "The space the protagonist now occupies shows subtle signs of continuous change - walls that seem slightly different than moments before, furniture that has shifted position, or new passages that weren't there previously. Begin and end with parallel descriptions that show how even language itself shifts within this living labyrinth.";
-// ===== END PROMPT REPLACEMENTS =====
 
 //declare array of system prompts
 let systemPrompts =[sprompt1,sprompt2,sprompt3,sprompt4,sprompt5,sprompt6,sprompt7,sprompt8,sprompt9];
@@ -113,7 +113,7 @@ function tokensInput(){
   tokensLabel.elt.innerHTML = numTokens.value();
 }
 
-// NEW: Function to show loading message immediately
+// Function to show loading message immediately
 function showLoadingMessage() {
   isLoading = true;
   let messageArea = select(".messages");
@@ -137,112 +137,7 @@ function showLoadingMessage() {
   messageArea.elt.parentElement.scrollTop = messageArea.elt.parentElement.scrollHeight;
 }
 
-// ===== REPLACE YOUR ENTIRE sendMessage FUNCTION WITH THIS ONE =====
-// Sends a chat message
-function sendMessage(direction){
-  // ===== THIS IS THE KEY CHANGE - BUILD CONTEXT FROM PREVIOUS RESPONSE =====
-  let prompt = "";
-  
-  // Build prompt with previous context
-  if (lastGeneratedText) {
-    prompt = `Previous passage: "${lastGeneratedText}"\n\nContinue the story seamlessly from where it left off.`;
-  } else {
-    prompt = "Begin a new story.";
-  }
-  // ===== END KEY CHANGE =====
-
-  console.log("Sending prompt with context:", prompt);
-
-  //if system prompt has no text in it just say "be helpful" by default
-  let system_prompt = (systemPrompt.value() === "")? "Be helpful" : systemPrompt.value();
-  let tokens = numTokens.value();
-  console.log(system_prompt, tokens);
-
-  // Prevent markup from being injected into the message
-  prompt = cleanInput(prompt);
-  // if there is a non-empty message and a socket connection
-  if (connected) {
-    inputMessage.value('');
-    // tell server to execute 'chat' and send along parameters
-    //if 'forward' go to next prompt
-   if (direction === "forward"){
-    currentPrompt = (currentPrompt + 1) % systemPrompts.length;
-   }
-   //if back go back a prompt
-   if (direction === "backward"){
-    currentPrompt = (currentPrompt - 1 + systemPrompts.length) % systemPrompts.length;
-   }
-   //make sure current prompt does not excede index list length
-   currentPrompt = currentPrompt%systemPrompts.length;
- 
-   let systemPrompt = systemPrompts[currentPrompt];
-
-   // ===== ENHANCED CONTINUITY INSTRUCTIONS =====
-   //in addition to each prompt
-   //hold coninuity with the last prompt response
-   systemPrompt += " Continue the narrative seamlessly, maintaining the same protagonist and spatial context.";
-   systemPrompt += " The reader is physically moving through an impossible architectural space.";
-   systemPrompt += " Each passage should feel like stepping into a new room or corridor of an infinite structure.";
-   //limit the response to 30 words
-   systemPrompt += " Write no more than 3 paragraphs.";
-   //adjust language style
-   systemPrompt += " Write in a style inspired by Borges, Calvino, or Danielewski.";
-   systemPrompt += " Write as though you are narrating the reader through a space.";
-   systemPrompt += " The architecture itself is alive, responsive, and self-writing.";
-   systemPrompt += " The last sentence is always complete with punctuation at the end.";
-   // ===== END ENHANCED INSTRUCTIONS =====
-   
-   let maxTokens = 300; //enough tokens for a full page
-   
-   // send page and direction updates to ghost sketch before 'chat' 
-   //  so it can do stuff while waiting for chat to return or use the additional
-   //  data if needed for any other purpose    
-  socket.emit('page-turn', {
-     _currentPromptIndex: currentPrompt, 
-     _direction: direction
-   });
-   
-   // Also emit the event that ghost sketch is listening for
-   socket.emit('page-turn-update', {
-     currentPromptIndex: currentPrompt, 
-     direction: direction
-   });
- 
-   // ===== UPDATED CHAT EMIT WITH CONTEXT =====
-   socket.emit('chat', {
-     _prompt: prompt,  // NOW THIS CONTAINS THE PREVIOUS STORY CONTEXT!
-     _system_prompt: systemPrompt, 
-     _max_tokens: maxTokens,
-     _current_prompt: currentPrompt,
-     _history: conversationHistory.slice(-maxHistoryLength) // Send recent history
-   });
-   // ===== END UPDATED EMIT =====
-  }
-}
-// ===== END sendMessage REPLACEMENT =====
-
-// Adds the visual chat message to the message list
-// MODIFY your addChatMessage function to use the new effect
-function addChatMessage(data) {
-  isLoading = false; // Reset loading state when message arrives
-  let messageArea = select(".messages"); // Select message container
-
-  messageArea.html("");
-
-  let messageDiv = createDiv("");
-  messageDiv.parent(messageArea);
-  messageDiv.addClass("message");
-
-  let userNameSpan = createSpan(data.username);
-  userNameSpan.parent(messageDiv);
-  userNameSpan.addClass("username");
-
-  let messageBodySpan = createSpan();
-  messageBodySpan.parent(messageDiv);
-  messageBodySpan.addClass("messageBody");
-
-//chat GPT helped me figure out how to clear the previous message so it refreshes with every entry or 'page turn'
-// and maintain typing effect
+// Progressive typing effect function
 function progressiveTypeEffect(element, text, speed = 50) {
   element.innerHTML = ""; // Clear existing text
   
@@ -301,30 +196,132 @@ function progressiveTypeEffect(element, text, speed = 50) {
   typeNextWord();
 }
 
+// Enhanced sendMessage function with memory system and page regeneration
+function sendMessage(direction) {
+  let prompt = "";
   
-  let i = 0;
-
-  function type() {
-    if (i < text.length) {
-      element.innerHTML += text.charAt(i);
-      i++;
-      setTimeout(type, speed);
-      
-      // Scroll to bottom as text is being typed to keep up with content
-      const messageArea = element.closest('.message-scroll');
-      if (messageArea && i % 20 === 0) { // Update scroll every 20 characters for performance
-        messageArea.scrollTop = messageArea.scrollHeight;
-      }
-    } else {
-      // Final scroll to bottom when typing is complete
-      const messageArea = element.closest('.message-scroll');
-      if (messageArea) {
-        messageArea.scrollTop = messageArea.scrollHeight;
-      }
-    }
+  // Create a unique key for each page based on prompt and position in story
+  let pageKey = `${currentPrompt}_${conversationHistory.length}`;
+  
+  if (direction === "backward" && lastGeneratedText) {
+    // GOING BACKWARD: Regenerate the same page with different wording
+    prompt = `Previous passage: "${lastGeneratedText}"\n\nRewrite this same scene with different language and phrasing, but keep the same events, spatial context, and story progression. Use varied sentence structures and different descriptive details while maintaining the same essential narrative moment.`;
+    
+    console.log("Regenerating current page with different wording");
+    
+  } else if (direction === "forward" && lastGeneratedText) {
+    // GOING FORWARD: Continue the story normally
+    prompt = `Previous passage: "${lastGeneratedText}"\n\nContinue the story seamlessly from where it left off.`;
+    
+    // Store the context for this new page
+    pageKey = `${currentPrompt}_${conversationHistory.length}`;
+    pageContexts[pageKey] = {
+      previousText: lastGeneratedText,
+      promptIndex: currentPrompt,
+      timestamp: Date.now()
+    };
+    
+  } else {
+    // First page
+    prompt = "Begin a new story.";
+    pageContexts["0_0"] = {
+      previousText: "",
+      promptIndex: 0,
+      timestamp: Date.now()
+    };
   }
 
-  type();
+  console.log("Sending prompt with context:", prompt);
+  console.log("Direction:", direction);
+  console.log("Current page key:", pageKey);
+
+  let system_prompt = (systemPrompt.value() === "") ? "Be helpful" : systemPrompt.value();
+  let tokens = numTokens.value();
+
+  // Prevent markup from being injected into the message
+  prompt = cleanInput(prompt);
+  
+  if (connected) {
+    inputMessage.value('');
+    
+    // Navigate prompts - but handle backward differently
+    if (direction === "forward") {
+      currentPrompt = (currentPrompt + 1) % systemPrompts.length;
+    } else if (direction === "backward") {
+      // Don't change currentPrompt - we're regenerating the same page
+    }
+    
+    currentPrompt = currentPrompt % systemPrompts.length;
+ 
+    let systemPrompt = systemPrompts[currentPrompt];
+    
+    // Different instructions based on direction
+    if (direction === "backward") {
+      systemPrompt += " Rewrite the same narrative moment with fresh language. Keep the same spatial context, character actions, and story progression, but use different descriptive words, sentence structures, and stylistic choices.";
+      systemPrompt += " The same events occur, but the prose itself shifts like light changing in a room.";
+    } else {
+      systemPrompt += " Continue the narrative seamlessly, maintaining the same protagonist and spatial context.";
+    }
+    
+    systemPrompt += " The reader is physically moving through an impossible architectural space.";
+    systemPrompt += " Each passage should feel like stepping into a new room or corridor of an infinite structure.";
+    systemPrompt += " Write no more than 3 paragraphs.";
+    systemPrompt += " Write in a style inspired by Borges, Calvino, or Danielewski.";
+    systemPrompt += " Write as though you are narrating the reader through a space.";
+    systemPrompt += " The architecture itself is alive, responsive, and self-writing.";
+    systemPrompt += " The last sentence is always complete with punctuation at the end.";
+    
+    let maxTokens = 300;
+    
+    // send page and direction updates to ghost sketch before 'chat' 
+    socket.emit('page-turn', {
+       _currentPromptIndex: currentPrompt, 
+       _direction: direction
+     });
+     
+     socket.emit('page-turn-update', {
+       currentPromptIndex: currentPrompt, 
+       direction: direction
+     });
+   
+     socket.emit('chat', {
+       _prompt: prompt,  // NOW THIS CONTAINS THE PREVIOUS STORY CONTEXT!
+       _system_prompt: systemPrompt, 
+       _max_tokens: maxTokens,
+       _current_prompt: currentPrompt,
+       _direction: direction,
+       _is_regeneration: direction === "backward", // Flag for server
+       _history: conversationHistory.slice(-maxHistoryLength) // Send recent history
+     });
+  }
+}
+
+// Adds the visual chat message to the message list
+function addChatMessage(data) {
+  isLoading = false; // Reset loading state when message arrives
+  let messageArea = select(".messages"); // Select message container
+
+  messageArea.html("");
+
+  let messageDiv = createDiv("");
+  messageDiv.parent(messageArea);
+  messageDiv.addClass("message");
+
+  let userNameSpan = createSpan(data.username);
+  userNameSpan.parent(messageDiv);
+  userNameSpan.addClass("username");
+
+  let messageBodySpan = createSpan();
+  messageBodySpan.parent(messageDiv);
+  messageBodySpan.addClass("messageBody");
+
+  // Use progressive typing effect
+  progressiveTypeEffect(messageBodySpan.elt, data.message, 60);
+
+  // Final scroll to bottom after a short delay
+  setTimeout(() => {
+    messageArea.elt.parentElement.scrollTop = messageArea.elt.parentElement.scrollHeight;
+  }, 100);
 }
 
 // Prevents input from having injected markup
@@ -365,34 +362,37 @@ socket.on('reconnect', () => {
   console.log('you have recconnected');
 });
 
-// ===== REPLACE YOUR EXISTING 'new message' HANDLER WITH THIS ONE =====
-// when server emits 'new message', update the chat body
+// Enhanced message handler with memory system and regeneration support
 socket.on('new message', (data) => {
   console.log("Received new message:", data);
   
-  // ===== STORE THE RESPONSE FOR CONTINUITY =====
-  // Store the generated text for continuity
+  // Always update the current text (whether new or regenerated)
   lastGeneratedText = data;
   
-  // Add to conversation history
-  conversationHistory.push({
-    prompt: currentPrompt,
-    response: data,
-    timestamp: Date.now()
-  });
-  
-  // Limit history size to prevent token overflow
-  if (conversationHistory.length > maxHistoryLength * 2) {
-    conversationHistory = conversationHistory.slice(-maxHistoryLength);
+  // Only add to history if it's a forward movement (new content)
+  // Regenerated content replaces the current moment
+  if (direction !== "backward") {
+    conversationHistory.push({
+      prompt: currentPrompt,
+      response: data,
+      timestamp: Date.now(),
+      direction: direction || 'forward'
+    });
+    
+    // Limit history size to prevent token overflow
+    if (conversationHistory.length > maxHistoryLength * 2) {
+      conversationHistory = conversationHistory.slice(-maxHistoryLength);
+    }
   }
   
   console.log("Updated conversation history:", conversationHistory);
-  // ===== END STORAGE CODE =====
   
-  let message = { username: "entry: ", message: data };
+  let message = { 
+    username: direction === "backward" ? "entry (retold): " : "entry: ", 
+    message: data 
+  };
   addChatMessage(message);
 });
-// ===== END REPLACEMENT =====
 
 // listen for updates from ghost sketch
 socket.on('sketch-update', (data) => {
