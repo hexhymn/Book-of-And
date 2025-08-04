@@ -137,8 +137,7 @@ function showLoadingMessage() {
   messageArea.elt.parentElement.scrollTop = messageArea.elt.parentElement.scrollHeight;
 }
 
-// Progressive typing effect function
-function progressiveTypeEffect(element, text, speed = 50) {
+function typeEffect(element, text, speed = 30) { // Original typing speed
   element.innerHTML = ""; // Clear existing text
   
   // Ensure container height remains fixed during typing
@@ -147,45 +146,21 @@ function progressiveTypeEffect(element, text, speed = 50) {
     messageContainer.style.height = '70vh';
   }
   
-  // Split text into words for more natural chunking
-  const words = text.split(' ');
-  let currentWordIndex = 0;
-  let displayedText = '';
+  let i = 0;
 
-  function typeNextWord() {
-    if (currentWordIndex < words.length) {
-      // Add the next word
-      displayedText += (currentWordIndex > 0 ? ' ' : '') + words[currentWordIndex];
-      element.innerHTML = displayedText;
-      currentWordIndex++;
+  function type() {
+    if (i < text.length) {
+      element.innerHTML += text.charAt(i);
+      i++;
+      setTimeout(type, speed);
       
-      // Variable timing based on word length and punctuation
-      let nextDelay = speed;
-      
-      // Longer pause after punctuation
-      if (words[currentWordIndex - 1]?.match(/[.!?]$/)) {
-        nextDelay = speed * 3;
-      }
-      // Shorter pause after commas
-      else if (words[currentWordIndex - 1]?.match(/[,;:]$/)) {
-        nextDelay = speed * 1.5;
-      }
-      // Faster for short words
-      else if (words[currentWordIndex - 1]?.length <= 3) {
-        nextDelay = speed * 0.7;
-      }
-      
-      setTimeout(typeNextWord, nextDelay);
-      
-      // Scroll to bottom periodically
-      if (currentWordIndex % 5 === 0) {
-        const messageArea = element.closest('.message-scroll');
-        if (messageArea) {
-          messageArea.scrollTop = messageArea.scrollHeight;
-        }
+      // Scroll to bottom as text is being typed to keep up with content
+      const messageArea = element.closest('.message-scroll');
+      if (messageArea && i % 20 === 0) { // Update scroll every 20 characters for performance
+        messageArea.scrollTop = messageArea.scrollHeight;
       }
     } else {
-      // Final scroll to bottom when complete
+      // Final scroll to bottom when typing is complete
       const messageArea = element.closest('.message-scroll');
       if (messageArea) {
         messageArea.scrollTop = messageArea.scrollHeight;
@@ -193,7 +168,7 @@ function progressiveTypeEffect(element, text, speed = 50) {
     }
   }
 
-  typeNextWord();
+  type();
 }
 
 // Enhanced sendMessage function with memory system and page regeneration
@@ -315,8 +290,8 @@ function addChatMessage(data) {
   messageBodySpan.parent(messageDiv);
   messageBodySpan.addClass("messageBody");
 
-  // Use progressive typing effect
-  progressiveTypeEffect(messageBodySpan.elt, data.message, 60);
+  // Use your original typing effect
+  typeEffect(messageBodySpan.elt, data.message);
 
   // Final scroll to bottom after a short delay
   setTimeout(() => {
