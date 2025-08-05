@@ -240,10 +240,9 @@ function sendMessage(direction) {
     }
     
     systemPrompt += " The reader is physically moving through an architectural space.";
-    systemPrompt += " Use motifs from mythology.";
     systemPrompt += " Write no more than 3 paragraphs.";
     systemPrompt += " Write in a style that is literary, philosophical, and incorporates magical realism.";
-   // systemPrompt += " Write as though you are narrating the reader through a space.";
+    systemPrompt += " Write as though you are narrating the reader through a space.";
    // systemPrompt += " The architecture itself is alive, responsive, and self-writing.";
     systemPrompt += " The last sentence is always complete with punctuation at the end.";
     
