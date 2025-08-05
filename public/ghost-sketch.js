@@ -1,8 +1,6 @@
 console.log("Ghost sketch loading...");
 
 // ===== PARTICLE CLASS =====
-// ===== PARTICLE CLASS =====
-// ===== OPTIMIZED PARTICLE CLASS =====
 // Enhanced WordParticle class with organic entrance animations
 class WordParticle {
   constructor(word, x, y) {
@@ -171,13 +169,19 @@ class WordParticle {
     
     // Draw connections with organic opacity
     if (this.connections.length > 0 && this.isFullySpawned) {
-      stroke(140, twinkleAlpha * 0.3);
-      strokeWeight(0.5);
+      stroke(200, twinkleAlpha * 0.6); // Brighter, more visible connections
+      strokeWeight(0.8);
       
-      for (let i = 0; i < Math.min(2, this.connections.length); i++) {
+      for (let i = 0; i < Math.min(4, this.connections.length); i++) {
         let connected = this.connections[i];
         if (connected.isFullySpawned) {
-          line(this.x, this.y, connected.x, connected.y);
+          let distance = dist(this.x, this.y, connected.x, connected.y);
+          if (distance < 100) { // Only draw reasonably close connections
+            // Vary line opacity based on distance
+            let connectionAlpha = map(distance, 0, 100, twinkleAlpha * 0.8, twinkleAlpha * 0.2);
+            stroke(200, connectionAlpha);
+            line(this.x, this.y, connected.x, connected.y);
+          }
         }
       }
     }
@@ -205,20 +209,37 @@ class WordParticle {
   findConnections(allParticles) {
     if (!this.isFullySpawned) return; // Don't connect until fully spawned
     
-    let recentParticles = allParticles.slice(-50);
+    // Check more particles for connections
+    let searchParticles = allParticles.slice(-200); // Increased search range
     
-    for (let other of recentParticles) {
-      if (other !== this && other.isFullySpawned && this.word === other.word && this.connections.length < 3) {
-        if (!this.connections.includes(other)) {
+    for (let other of searchParticles) {
+      if (other !== this && other.isFullySpawned && this.connections.length < 4) {
+        let distance = dist(this.x, this.y, other.x, other.y);
+        
+        // Connect based on proximity OR same word
+        let shouldConnect = false;
+        
+        // Same word connection (stronger)
+        if (this.word === other.word && distance < 80) {
+          shouldConnect = true;
+        }
+        // Proximity connection (weaker, for clustering)
+        else if (distance < 40) {
+          shouldConnect = true;
+        }
+        
+        if (shouldConnect && !this.connections.includes(other)) {
           this.connections.push(other);
-          other.connections.push(this);
+          if (other.connections.length < 4) {
+            other.connections.push(this);
+          }
         }
       }
     }
   }
 }
 
-//Enhanced WordParticleSystem with staggered spawning
+// Enhanced WordParticleSystem with staggered spawning
 class WordParticleSystem {
   constructor() {
     this.particles = [];
@@ -246,18 +267,18 @@ class WordParticleSystem {
     for (let i = 0; i < words.length; i++) {
       let word = words[i];
       if (word.length >= 3) {
-        // Spread particles around the point
+        // Tighter clustering - smaller radius for better connections
         let angle = random(TWO_PI);
-        let distance = random(20, 60);
+        let distance = random(5, 25); // Much smaller spread
         let wordX = x + cos(angle) * distance;
         let wordY = y + sin(angle) * distance;
         
         // Keep within canvas bounds
-        wordX = constrain(wordX, 50, width - 50);
-        wordY = constrain(wordY, 50, height - 50);
+        wordX = constrain(wordX, 30, width - 30);
+        wordY = constrain(wordY, 30, height - 30);
         
-        // Stagger spawn times
-        let delay = i * random(5, 15); // Random delay between words
+        // Shorter, more consistent delays
+        let delay = i * random(2, 8); // Faster, more consistent spawning
         this.addWord(word, wordX, wordY, delay);
       }
     }
@@ -270,10 +291,6 @@ class WordParticleSystem {
       if (frameCount >= spawn.spawnTime) {
         let particle = new WordParticle(spawn.word, spawn.x, spawn.y);
         this.particles.push(particle);
-        
-        // Find connections after adding
-        particle.findConnections(this.particles);
-        
         this.spawnQueue.splice(i, 1);
       }
     }
@@ -295,8 +312,17 @@ class WordParticleSystem {
       }
     }
     
+    // Find connections for fully spawned particles (run less frequently for performance)
+    if (frameCount % 10 === 0) { // Every 10 frames
+      for (let particle of this.particles) {
+        if (particle.isFullySpawned && particle.connections.length < 4) {
+          particle.findConnections(this.particles);
+        }
+      }
+    }
+    
     // Limit total particles for performance
-    if (this.particles.length > 2000) {
+    if (this.particles.length > 1500) {
       this.particles.splice(0, 100);
     }
   }
@@ -335,7 +361,7 @@ function setup() {
 }
 
 function draw() {
-background(0, 30); // Trail effect
+  background(0, 30); // Trail effect
   
   // Draw stats
   fill(255, 150);
@@ -362,9 +388,20 @@ socket.on('book-data', (data) => {
   if (data.type === 'new-text') {
     currentText = data.content;
     
-    // Create explosion of words at random position
-    let x = random(100, width - 100);
-    let y = random(100, height - 100);
+    // Create explosion of words at specific position for this generation
+    let x, y;
+    if (data.promptIndex !== undefined) {
+      // Position based on prompt index to create distinct clusters
+      let angle = (data.promptIndex / 9) * TWO_PI; // 9 prompts in circle
+      let radius = 150;
+      x = width/2 + cos(angle) * radius;
+      y = height/2 + sin(angle) * radius;
+    } else {
+      // Random position if no prompt index
+      x = random(100, width - 100);
+      y = random(100, height - 100);
+    }
+    
     particleSystem.addTextExplosion(data.content, x, y);
     
     // Send acknowledgment back to main sketch
@@ -388,5 +425,4 @@ function mousePressed() {
     let fs = fullscreen();
     fullscreen(!fs);
   }
-
-    }
+}
