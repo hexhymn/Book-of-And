@@ -1,205 +1,108 @@
 console.log("Ghost sketch loading...");
 
 // ===== PARTICLE CLASS =====
-// Enhanced WordParticle class with organic entrance animations
+// ===== PARTICLE CLASS =====
+// ===== OPTIMIZED PARTICLE CLASS =====
 class WordParticle {
   constructor(word, x, y) {
     this.word = word.toLowerCase();
-    this.targetX = x;
-    this.targetY = y;
-    
-    // Start particles off-screen or at center and animate to position
-    this.spawnMode = random(['fade', 'spiral', 'drift', 'pulse']);
-    
-    if (this.spawnMode === 'spiral') {
-      // Spiral in from center
-      this.x = width / 2;
-      this.y = height / 2;
-      this.spiralAngle = random(TWO_PI);
-      this.spiralRadius = random(200, 400);
-    } else if (this.spawnMode === 'drift') {
-      // Drift in from edges
-      let edge = floor(random(4));
-      if (edge === 0) { // top
-        this.x = random(width);
-        this.y = -50;
-      } else if (edge === 1) { // right
-        this.x = width + 50;
-        this.y = random(height);
-      } else if (edge === 2) { // bottom
-        this.x = random(width);
-        this.y = height + 50;
-      } else { // left
-        this.x = -50;
-        this.y = random(height);
-      }
-    } else {
-      // Fade or pulse start at target position
-      this.x = x;
-      this.y = y;
-    }
-    
-    this.vx = 0;
-    this.vy = 0;
+    this.x = x;
+    this.y = y;
+    this.vx = random(-0.5, 0.5); // Reduced movement
+    this.vy = random(-0.5, 0.5);
     this.size = random(3, 8);
     this.baseSize = this.size;
-    this.alpha = 0; // Start invisible
+    this.alpha = 255;
     this.life = 1000;
-    this.decay = random(0.1, 0.3);
+    // make the decay of some particles more exaggerated (some live longer than others)
+    //  by using the wordcount from the main particle system
+    //  to affect some values of each particle in a consistent way
+    //  (set once at creation and doesn't change with each update)
+    this.decay = random(0.1, (particleSystem.totalWordCount * 0.05));
     this.connections = [];
     this.isNew = true;
     this.age = 0;
     this.maxAge = 120;
     
-    // Animation properties
-    this.animationProgress = 0;
-    this.animationSpeed = random(0.02, 0.06);
-    this.isFullySpawned = false;
-    this.spawnDuration = random(60, 120); // frames to fully spawn
-    
-    // Organic movement properties
-    this.noiseOffsetX = random(1000);
-    this.noiseOffsetY = random(1000);
-    this.driftSpeed = random(0.005, 0.015);
-    
-    // Twinkle
+    // Simplified twinkle
     this.twinkleOffset = random(1000);
-    this.twinkleSpeed = random(0.02, 0.05);
+    this.twinkleSpeed = random(0.02, 0.05); // Slower for smoother animation
     
-    // Pulse properties for pulse spawn mode
-    this.pulsePhase = random(TWO_PI);
-    this.pulseSpeed = random(0.1, 0.3);
+    // Circular boundary properties
+    this.centerX = width / 2;
+    this.centerY = height / 2;
+    this.maxRadius = min(width, height) / 2 - 10; // Leave some padding
   }
   
   update() {
+    // use the wordcount from the main particle system
+    //  to affect some values on each particle every update
+    const randomness = particleSystem.totalWordCount * 0.015;
     this.age++;
     
-    // Handle spawning animation
-    if (!this.isFullySpawned) {
-      this.animationProgress += this.animationSpeed;
+    // make x & y positions a bit random each update - so they are jittery
+    this.x += (this.vx + random(-randomness, randomness));
+    this.y += (this.vy + random(-randomness, randomness));
+    
+    // Circular boundary constraint
+    let distanceFromCenter = dist(this.x, this.y, this.centerX, this.centerY);
+    
+    if (distanceFromCenter > this.maxRadius) {
+      // Calculate angle from center to particle
+      let angle = atan2(this.y - this.centerY, this.x - this.centerX);
       
-      if (this.spawnMode === 'fade') {
-        // Simple fade in
-        this.alpha = this.animationProgress * 255;
-        this.size = this.baseSize * this.animationProgress;
-        
-      } else if (this.spawnMode === 'spiral') {
-        // Spiral in from center
-        let progress = this.animationProgress;
-        this.spiralRadius *= 0.95; // Spiral inward
-        this.spiralAngle += 0.2;
-        
-        this.x = width/2 + cos(this.spiralAngle) * this.spiralRadius * (1 - progress);
-        this.y = height/2 + sin(this.spiralAngle) * this.spiralRadius * (1 - progress);
-        
-        // Interpolate to target position
-        this.x = lerp(this.x, this.targetX, progress * 0.1);
-        this.y = lerp(this.y, this.targetY, progress * 0.1);
-        
-        this.alpha = progress * 255;
-        this.size = this.baseSize * progress;
-        
-      } else if (this.spawnMode === 'drift') {
-        // Drift from edges with easing
-        let progress = this.ease(this.animationProgress);
-        this.x = lerp(this.x, this.targetX, progress * 0.08);
-        this.y = lerp(this.y, this.targetY, progress * 0.08);
-        
-        this.alpha = progress * 255;
-        this.size = this.baseSize * progress;
-        
-        // Add some organic drift
-        this.x += sin(this.age * 0.05) * 0.5;
-        this.y += cos(this.age * 0.03) * 0.3;
-        
-      } else if (this.spawnMode === 'pulse') {
-        // Pulse in with wave
-        let progress = this.animationProgress;
-        let pulse = sin(this.age * this.pulseSpeed + this.pulsePhase);
-        
-        this.alpha = progress * 255;
-        this.size = this.baseSize * progress * (0.8 + pulse * 0.2);
-      }
+      // Place particle at the boundary
+      this.x = this.centerX + cos(angle) * this.maxRadius;
+      this.y = this.centerY + sin(angle) * this.maxRadius;
       
-      if (this.animationProgress >= 1.0) {
-        this.isFullySpawned = true;
-        this.alpha = 255;
-        this.size = this.baseSize;
-      }
-    } else {
-      // Normal behavior after spawning
-      // Organic floating movement using noise
-      let noiseX = noise(this.noiseOffsetX + this.age * this.driftSpeed) - 0.5;
-      let noiseY = noise(this.noiseOffsetY + this.age * this.driftSpeed) - 0.5;
+      // Reflect velocity (bounce off the circular boundary)
+      // Calculate normal vector at boundary point
+      let normalX = cos(angle);
+      let normalY = sin(angle);
       
-      this.vx = noiseX * 0.8;
-      this.vy = noiseY * 0.8;
+      // Reflect velocity vector off the normal
+      let dotProduct = this.vx * normalX + this.vy * normalY;
+      this.vx = this.vx - 2 * dotProduct * normalX;
+      this.vy = this.vy - 2 * dotProduct * normalY;
       
-      this.x += this.vx;
-      this.y += this.vy;
-      
-      // Gentle drift toward center to prevent particles from wandering off
-      let centerPull = 0.001;
-      this.vx += (width/2 - this.x) * centerPull;
-      this.vy += (height/2 - this.y) * centerPull;
-      
-      // Life decay
-      this.life -= this.decay;
-      this.alpha = this.life;
+      // Add some damping to prevent particles from getting too energetic
+      this.vx *= 0.8;
+      this.vy *= 0.8;
     }
+    
+    //matrix to symbolize letters in the alphabet
+    this.life -= this.decay;
+    this.alpha = this.life;
+    this.vx *= 0.98;
+    this.vy *= 0.98;
     
     if (this.isNew && this.age > this.maxAge) {
       this.isNew = false;
     }
   }
   
-  // Easing function for smoother animation
-  ease(t) {
-    return t * t * (3 - 2 * t); // Smoothstep
-  }
-  
   display() {
-    if (this.alpha <= 0) return;
-    
-    // Enhanced twinkle that's more subtle during spawn
-    let twinkleIntensity = this.isFullySpawned ? 0.3 : 0.1;
-    let twinkle = sin(frameCount * this.twinkleSpeed + this.twinkleOffset) * twinkleIntensity + (1 - twinkleIntensity);
+    // Simpler twinkle
+    let twinkle = sin(frameCount * this.twinkleSpeed + this.twinkleOffset) * 0.3 + 0.7;
     let twinkleAlpha = this.alpha * twinkle;
-    let twinkleSize = this.size * twinkle;
+    let twinkleSize = this.baseSize * twinkle;
     
-    // Draw connections with organic opacity
-    if (this.connections.length > 0 && this.isFullySpawned) {
-      stroke(200, twinkleAlpha * 0.6); // Brighter, more visible connections
-      strokeWeight(0.8);
+    // Limited connections
+    if (this.connections.length > 0) {
+      stroke(140, 80);
+      strokeWeight(0.5);
       
-      for (let i = 0; i < Math.min(4, this.connections.length); i++) {
+      // Only draw first 2 connections
+      for (let i = 0; i < Math.min(2, this.connections.length); i++) {
         let connected = this.connections[i];
-        if (connected.isFullySpawned) {
-          let distance = dist(this.x, this.y, connected.x, connected.y);
-          if (distance < 100) { // Only draw reasonably close connections
-            // Vary line opacity based on distance
-            let connectionAlpha = map(distance, 0, 100, twinkleAlpha * 0.8, twinkleAlpha * 0.2);
-            stroke(200, connectionAlpha);
-            line(this.x, this.y, connected.x, connected.y);
-          }
-        }
+        line(this.x, this.y, connected.x, connected.y);
       }
     }
     
-    // Main particle with soft glow effect
-    noStroke();
-    
-    // Outer glow
-    fill(255, 255, 255, twinkleAlpha * 0.1);
-    circle(this.x, this.y, twinkleSize * 2);
-    
     // Main particle
+    noStroke();
     fill(255, 255, 255, twinkleAlpha);
     circle(this.x, this.y, twinkleSize);
-    
-    // Inner bright core
-    fill(255, 255, 255, twinkleAlpha * 0.8);
-    circle(this.x, this.y, twinkleSize * 0.4);
   }
   
   isDead() {
@@ -207,99 +110,112 @@ class WordParticle {
   }
   
   findConnections(allParticles) {
-    if (!this.isFullySpawned) return; // Don't connect until fully spawned
+    // Only check last 50 particles
+    let recentParticles = allParticles.slice(-50);
     
-    // Check more particles for connections
-    let searchParticles = allParticles.slice(-200); // Increased search range
-    
-    for (let other of searchParticles) {
-      if (other !== this && other.isFullySpawned && this.connections.length < 4) {
-        let distance = dist(this.x, this.y, other.x, other.y);
-        
-        // Connect based on proximity OR same word
-        let shouldConnect = false;
-        
-        // Same word connection (stronger)
-        if (this.word === other.word && distance < 80) {
-          shouldConnect = true;
-        }
-        // Proximity connection (weaker, for clustering)
-        else if (distance < 40) {
-          shouldConnect = true;
-        }
-        
-        if (shouldConnect && !this.connections.includes(other)) {
+    for (let other of recentParticles) {
+      if (other !== this && this.word === other.word && this.connections.length < 3) {
+        if (!this.connections.includes(other)) {
           this.connections.push(other);
-          if (other.connections.length < 4) {
-            other.connections.push(this);
-          }
+          other.connections.push(this);
         }
       }
     }
   }
 }
 
-// Enhanced WordParticleSystem with staggered spawning
+//PARTICLE SYSTEM CLASS
 class WordParticleSystem {
   constructor() {
     this.particles = [];
     this.totalWordCount = 0;
-    this.spawnQueue = []; // Queue for staggered spawning
   }
   
-  addWord(word, x, y, delay = 0) {
+  addWord(word, x, y) {
+    // Skip very short words
     if (word.length < 3) return;
     
-    // Add to spawn queue with delay
-    this.spawnQueue.push({
-      word: word,
-      x: x,
-      y: y,
-      spawnTime: frameCount + delay
-    });
+    // Ensure the particle starts within the circular boundary
+    let centerX = width / 2;
+    let centerY = height / 2;
+    let maxRadius = min(width, height) / 2 - 10;
     
+    let distanceFromCenter = dist(x, y, centerX, centerY);
+    if (distanceFromCenter > maxRadius) {
+      // If outside circle, place at a random position within the circle
+      let angle = random(TWO_PI);
+      let radius = random(maxRadius * 0.7); // Keep away from edges initially
+      x = centerX + cos(angle) * radius;
+      y = centerY + sin(angle) * radius;
+    }
+    
+    let particle = new WordParticle(word, x, y);
+    this.particles.push(particle);
     this.totalWordCount++;
+    
+    // Find connections after adding
+    particle.findConnections(this.particles);
+    
+    // Limit total particles for performance
+    if (this.particles.length > 2000) {
+      this.particles.splice(0, 100);
+    }
+    
+    return particle;
   }
   
   addTextExplosion(text, x, y) {
     let words = text.match(/\b\w+\b/g) || [];
     
-    for (let i = 0; i < words.length; i++) {
-      let word = words[i];
+    // Ensure explosion center is within circular boundary
+    let centerX = width / 2;
+    let centerY = height / 2;
+    let maxRadius = min(width, height) / 2 - 50; // Leave more room for explosion spread
+    
+    let distanceFromCenter = dist(x, y, centerX, centerY);
+    if (distanceFromCenter > maxRadius) {
+      let angle = atan2(y - centerY, x - centerX);
+      x = centerX + cos(angle) * maxRadius;
+      y = centerY + sin(angle) * maxRadius;
+    }
+    
+    for (let word of words) {
       if (word.length >= 3) {
-        // Tighter clustering - smaller radius for better connections
+        // Spread particles around the point, but keep within circular boundary
         let angle = random(TWO_PI);
-        let distance = random(5, 25); // Much smaller spread
+        let distance = random(10, 40);
         let wordX = x + cos(angle) * distance;
         let wordY = y + sin(angle) * distance;
         
-        // Keep within canvas bounds
-        wordX = constrain(wordX, 30, width - 30);
-        wordY = constrain(wordY, 30, height - 30);
-        
-        // Shorter, more consistent delays
-        let delay = i * random(2, 8); // Faster, more consistent spawning
-        this.addWord(word, wordX, wordY, delay);
+        // The addWord method will handle circular boundary constraints
+        this.addWord(word, wordX, wordY);
       }
     }
   }
   
-  update() {
-    // Process spawn queue
-    for (let i = this.spawnQueue.length - 1; i >= 0; i--) {
-      let spawn = this.spawnQueue[i];
-      if (frameCount >= spawn.spawnTime) {
-        let particle = new WordParticle(spawn.word, spawn.x, spawn.y);
-        this.particles.push(particle);
-        this.spawnQueue.splice(i, 1);
+  // do something in response to the page turn
+  handlePageTurn() {
+    // Remove oldest (index 0) particles if there are more than one
+    if (this.particles.length > 1) {
+      let particle = this.particles[0];
+      // Remove from connections
+      for (let connected of particle.connections) {
+        let index = connected.connections.indexOf(particle);
+        if (index > -1) {
+          connected.connections.splice(index, 1);
+        }
       }
-    }
-    
+      this.particles.splice(0, 1);
+    }    
+  }
+  
+  update() {
     // Update all particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
       let particle = this.particles[i];
       particle.update();
       
+      // Remove dead particles
       if (particle.isDead()) {
         // Remove from connections
         for (let connected of particle.connections) {
@@ -311,24 +227,28 @@ class WordParticleSystem {
         this.particles.splice(i, 1);
       }
     }
+  }
+  
+  display() {
+    // Optional: Draw the circular boundary for reference
+    // stroke(255, 50);
+    // strokeWeight(1);
+    // noFill();
+    // circle(width/2, height/2, min(width, height) - 20);
     
-    // Find connections for fully spawned particles (run less frequently for performance)
-    if (frameCount % 10 === 0) { // Every 10 frames
-      for (let particle of this.particles) {
-        if (particle.isFullySpawned && particle.connections.length < 4) {
-          particle.findConnections(this.particles);
+    // Draw connections first
+    stroke(255, 60);
+    strokeWeight(0.5);
+    for (let particle of this.particles) {
+      for (let connected of particle.connections) {
+        let distance = dist(particle.x, particle.y, connected.x, connected.y);
+        if (distance < 60) { // Only draw close connections
+          line(particle.x, particle.y, connected.x, connected.y);
         }
       }
     }
     
-    // Limit total particles for performance
-    if (this.particles.length > 1500) {
-      this.particles.splice(0, 100);
-    }
-  }
-  
-  display() {
-    // Draw particles (connections are drawn within each particle)
+    // Draw particles
     for (let particle of this.particles) {
       particle.display();
     }
@@ -361,15 +281,15 @@ function setup() {
 }
 
 function draw() {
-  background(0, 30); // Trail effect
+background(0, 30); // Trail effect
   
   // Draw stats
   fill(255, 150);
   //check word count and particle count
-  // textAlign(LEFT);
-  // textSize(16);
-  // text('Words: ' + particleSystem.getTotalWordCount(), 20, 30);
-  // text('Particles: ' + particleSystem.getParticleCount(), 20, 50);
+//   textAlign(LEFT);
+//   textSize(16);
+//   text('Words: ' + particleSystem.getTotalWordCount(), 20, 30);
+//   text('Particles: ' + particleSystem.getParticleCount(), 20, 50);
   
   // Update and display particle system
   particleSystem.update();
@@ -388,19 +308,15 @@ socket.on('book-data', (data) => {
   if (data.type === 'new-text') {
     currentText = data.content;
     
-    // Create explosion of words at specific position for this generation
-    let x, y;
-    if (data.promptIndex !== undefined) {
-      // Position based on prompt index to create distinct clusters
-      let angle = (data.promptIndex / 9) * TWO_PI; // 9 prompts in circle
-      let radius = 150;
-      x = width/2 + cos(angle) * radius;
-      y = height/2 + sin(angle) * radius;
-    } else {
-      // Random position if no prompt index
-      x = random(100, width - 100);
-      y = random(100, height - 100);
-    }
+    // Create explosion of words at random position within circular boundary
+    let centerX = width / 2;
+    let centerY = height / 2;
+    let maxRadius = min(width, height) / 2 - 60; // Leave room for explosion spread
+    
+    let angle = random(TWO_PI);
+    let radius = random(maxRadius * 0.5); // Keep explosions more toward center
+    let x = centerX + cos(angle) * radius;
+    let y = centerY + sin(angle) * radius;
     
     particleSystem.addTextExplosion(data.content, x, y);
     
@@ -412,6 +328,12 @@ socket.on('book-data', (data) => {
     });
   }
 });
+
+socket.on('page-turn-update', (data) => {
+  console.log('Ghost sketch received page turn update:', data);
+  particleSystem.handlePageTurn(data);
+}); 
+    
 
 socket.on('disconnect', () => {
   connected = false;
