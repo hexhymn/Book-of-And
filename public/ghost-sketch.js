@@ -12,13 +12,9 @@ class WordParticle {
     this.vy = random(-0.5, 0.5);
     this.size = random(3, 8);
     this.baseSize = this.size;
-    this.alpha = 255;
+    this.alpha = random(240,255);
     this.life = 1000;
-    // make the decay of some particles more exaggerated (some live longer than others)
-    //  by using the wordcount from the main particle system
-    //  to affect some values of each particle in a consistent way
-    //  (set once at creation and doesn't change with each update)
-    this.decay = random(0.1, (particleSystem.totalWordCount * 0.05));
+    this.decay = random(0.1, 0.3);
     this.connections = [];
     this.isNew = true;
     this.age = 0;
@@ -27,50 +23,12 @@ class WordParticle {
     // Simplified twinkle
     this.twinkleOffset = random(1000);
     this.twinkleSpeed = random(0.02, 0.05); // Slower for smoother animation
-    
-    // Circular boundary properties
-    this.centerX = width / 2;
-    this.centerY = height / 2;
-    this.maxRadius = min(width, height) / 2 - 10; // Leave some padding
   }
   
   update() {
-    // use the wordcount from the main particle system
-    //  to affect some values on each particle every update
-    const randomness = particleSystem.totalWordCount * 0.015;
     this.age++;
-    
-    // make x & y positions a bit random each update - so they are jittery
-    this.x += (this.vx + random(-randomness, randomness));
-    this.y += (this.vy + random(-randomness, randomness));
-    
-    // Circular boundary constraint
-    let distanceFromCenter = dist(this.x, this.y, this.centerX, this.centerY);
-    
-    if (distanceFromCenter > this.maxRadius) {
-      // Calculate angle from center to particle
-      let angle = atan2(this.y - this.centerY, this.x - this.centerX);
-      
-      // Place particle at the boundary
-      this.x = this.centerX + cos(angle) * this.maxRadius;
-      this.y = this.centerY + sin(angle) * this.maxRadius;
-      
-      // Reflect velocity (bounce off the circular boundary)
-      // Calculate normal vector at boundary point
-      let normalX = cos(angle);
-      let normalY = sin(angle);
-      
-      // Reflect velocity vector off the normal
-      let dotProduct = this.vx * normalX + this.vy * normalY;
-      this.vx = this.vx - 2 * dotProduct * normalX;
-      this.vy = this.vy - 2 * dotProduct * normalY;
-      
-      // Add some damping to prevent particles from getting too energetic
-      this.vx *= 0.8;
-      this.vy *= 0.8;
-    }
-    
-    //matrix to symbolize letters in the alphabet
+    this.x += this.vx;
+    this.y += this.vy;
     this.life -= this.decay;
     this.alpha = this.life;
     this.vx *= 0.98;
@@ -135,20 +93,6 @@ class WordParticleSystem {
     // Skip very short words
     if (word.length < 3) return;
     
-    // Ensure the particle starts within the circular boundary
-    let centerX = width / 2;
-    let centerY = height / 2;
-    let maxRadius = min(width, height) / 2 - 10;
-    
-    let distanceFromCenter = dist(x, y, centerX, centerY);
-    if (distanceFromCenter > maxRadius) {
-      // If outside circle, place at a random position within the circle
-      let angle = random(TWO_PI);
-      let radius = random(maxRadius * 0.7); // Keep away from edges initially
-      x = centerX + cos(angle) * radius;
-      y = centerY + sin(angle) * radius;
-    }
-    
     let particle = new WordParticle(word, x, y);
     this.particles.push(particle);
     this.totalWordCount++;
@@ -167,46 +111,21 @@ class WordParticleSystem {
   addTextExplosion(text, x, y) {
     let words = text.match(/\b\w+\b/g) || [];
     
-    // Ensure explosion center is within circular boundary
-    let centerX = width / 2;
-    let centerY = height / 2;
-    let maxRadius = min(width, height) / 2 - 50; // Leave more room for explosion spread
-    
-    let distanceFromCenter = dist(x, y, centerX, centerY);
-    if (distanceFromCenter > maxRadius) {
-      let angle = atan2(y - centerY, x - centerX);
-      x = centerX + cos(angle) * maxRadius;
-      y = centerY + sin(angle) * maxRadius;
-    }
-    
     for (let word of words) {
       if (word.length >= 3) {
-        // Spread particles around the point, but keep within circular boundary
+        // Spread particles around the point
         let angle = random(TWO_PI);
         let distance = random(10, 40);
         let wordX = x + cos(angle) * distance;
         let wordY = y + sin(angle) * distance;
         
-        // The addWord method will handle circular boundary constraints
+        // Keep within canvas bounds
+        wordX = constrain(wordX, 20, width - 20);
+        wordY = constrain(wordY, 20, height - 20);
+        
         this.addWord(word, wordX, wordY);
       }
     }
-  }
-  
-  // do something in response to the page turn
-  handlePageTurn() {
-    // Remove oldest (index 0) particles if there are more than one
-    if (this.particles.length > 1) {
-      let particle = this.particles[0];
-      // Remove from connections
-      for (let connected of particle.connections) {
-        let index = connected.connections.indexOf(particle);
-        if (index > -1) {
-          connected.connections.splice(index, 1);
-        }
-      }
-      this.particles.splice(0, 1);
-    }    
   }
   
   update() {
@@ -230,12 +149,6 @@ class WordParticleSystem {
   }
   
   display() {
-    // Optional: Draw the circular boundary for reference
-    // stroke(255, 50);
-    // strokeWeight(1);
-    // noFill();
-    // circle(width/2, height/2, min(width, height) - 20);
-    
     // Draw connections first
     stroke(255, 60);
     strokeWeight(0.5);
@@ -286,10 +199,10 @@ background(0, 30); // Trail effect
   // Draw stats
   fill(255, 150);
   //check word count and particle count
-//   textAlign(LEFT);
-//   textSize(16);
-//   text('Words: ' + particleSystem.getTotalWordCount(), 20, 30);
-//   text('Particles: ' + particleSystem.getParticleCount(), 20, 50);
+  // textAlign(LEFT);
+  // textSize(16);
+  // text('Words: ' + particleSystem.getTotalWordCount(), 20, 30);
+  // text('Particles: ' + particleSystem.getParticleCount(), 20, 50);
   
   // Update and display particle system
   particleSystem.update();
@@ -308,16 +221,9 @@ socket.on('book-data', (data) => {
   if (data.type === 'new-text') {
     currentText = data.content;
     
-    // Create explosion of words at random position within circular boundary
-    let centerX = width / 2;
-    let centerY = height / 2;
-    let maxRadius = min(width, height) / 2 - 60; // Leave room for explosion spread
-    
-    let angle = random(TWO_PI);
-    let radius = random(maxRadius * 0.5); // Keep explosions more toward center
-    let x = centerX + cos(angle) * radius;
-    let y = centerY + sin(angle) * radius;
-    
+    // Create explosion of words at random position
+    let x = random(100, width - 100);
+    let y = random(100, height - 100);
     particleSystem.addTextExplosion(data.content, x, y);
     
     // Send acknowledgment back to main sketch
@@ -328,12 +234,6 @@ socket.on('book-data', (data) => {
     });
   }
 });
-
-socket.on('page-turn-update', (data) => {
-  console.log('Ghost sketch received page turn update:', data);
-  particleSystem.handlePageTurn(data);
-}); 
-    
 
 socket.on('disconnect', () => {
   connected = false;
@@ -347,4 +247,5 @@ function mousePressed() {
     let fs = fullscreen();
     fullscreen(!fs);
   }
-}
+
+    }
