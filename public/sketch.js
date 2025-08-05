@@ -30,23 +30,25 @@ let pageContexts = {}; // Store the context for each page so we can regenerate i
 let currentPageKey = ""; // Track which page we're currently on
 
 //declare individual system prompts - enhanced for spatial navigation
-let sprompt1 = "The protagonist crosses a threshold into a new space. Describe the tactile sensation of the doorway, the change in air pressure, temperature, or acoustics. What do their hands touch? What do their feet feel? Include one architectural impossibility that suggests this structure defies normal geometry.";
+let sprompt1 = "The protagonist crosses a threshold into a new space. Describe tactile sensations, the change in air pressure, temperature, or acoustics. How does it engage with the senses?";
 
-let sprompt2 = "The protagonist discovers something unexpected embedded in the walls, floor, or ceiling of this space. Begin with their eyes catching a small detail, then reveal its larger significance. This object or marking suggests someone else has been here before. End with a realization about the nature of this place.";
+let sprompt2 = "The protagonist discovers something unexpected embedded in the space. This object or marking suggests someone else has been here before. The protagonist gains insight from this discovery.";
 
-let sprompt3 = "The protagonist notices patterns repeating throughout this space - in the wallpaper, tile work, or shadows. These patterns seem to shift when not directly observed. Include the protagonist's growing awareness that these motifs might be a form of communication or navigation system within the structure.";
+let sprompt3 = "The protagonist notices patterns repeating throughout this space - in the wallpaper, tile work, or shadows, etc. These patterns seem to shift when not directly observed. Include the protagonist's growing awareness that these motifs might be a form of communication or navigation system within the structure.";
 
-let sprompt4 = "A sudden change in lighting transforms how the protagonist perceives this space. Perhaps a window appears where none existed, or existing light sources change color or intensity. This illumination reveals architectural details previously hidden and suggests the building itself is somehow alive or responsive.";
+let sprompt4 = "A sudden change transforms how the protagonist perceives this space. Perhaps a window appears where none existed, or existing light sources change color or intensity. This illumination reveals details previously hidden and suggests the building itself is somehow alive or responsive.";
 
 let sprompt5 = "Time behaves strangely in this space. The protagonist experiences temporal displacement - hearing echoes of conversations from other eras, seeing glimpses of the room as it was or will be. Include sensory details from at least two time periods simultaneously. The architecture itself seems to be a palimpsest of different ages.";
 
-let sprompt6 = "The protagonist hears sounds suggesting other inhabitants of this infinite structure - footsteps above, voices through walls, or the distant operation of machinery. Use varied sentence rhythms to mirror the sounds described. Include one moment of profound silence that makes the protagonist question what they're truly hearing.";
+let sprompt6 = "The protagonist hears sounds suggesting that something else is in the space - footsteps above, voices through walls, or the distant operation of machinery. Use varied sentence rhythms to mirror the sounds described. the protagonist investigates what they're truly hearing. They encounter a new character.";
 
-let sprompt7 = "The protagonist finds a staircase, corridor, or passage that seems to lead impossibly upward, downward, or in directions that shouldn't exist. As they begin to traverse it, describe how their sense of orientation becomes confused. The passage itself seems to be writing them into a new chapter of the structure.";
+let sprompt7 = "The protagonist and new character continue to navigate the structure that seems to lead impossibly upward, downward, or in directions that shouldn't exist. As they begin to traverse it, describe how their sense of orientation becomes confused.";
 
-let sprompt8 = "The protagonist realizes that their path through the building is somehow connected to paths taken by others - perhaps they find evidence of previous travelers, or the rooms seem to be responding to their emotional state. Use metaphor to suggest the building is reading them as much as they are reading it.";
+let sprompt8 = "The protagonist realizes that their path through the building is somehow connected to paths taken by others - perhaps they find evidence of previous travelers, or the rooms seem to be responding to their emotional state. Use metaphor to suggest the building is reading them as much as they are reading it. Anyone traveling with the protagonist will now have to go separate ways.";
 
-let sprompt9 = "The space the protagonist now occupies shows subtle signs of continuous change - walls that seem slightly different than moments before, furniture that has shifted position, or new passages that weren't there previously. Begin and end with parallel descriptions that show how even language itself shifts within this living labyrinth.";
+let sprompt9 = "The space the protagonist now occupies shows subtle signs of continuous change - walls that seem slightly different than moments before, furniture that has shifted position, or new passages that weren't there previously. The protagonist finds a new threshold or door.";
+
+
 
 //declare array of system prompts
 let systemPrompts =[sprompt1,sprompt2,sprompt3,sprompt4,sprompt5,sprompt6,sprompt7,sprompt8,sprompt9];
@@ -238,10 +240,10 @@ function sendMessage(direction) {
       systemPrompt += " Continue the narrative seamlessly, maintaining the same protagonist and spatial context.";
     }
     
-    systemPrompt += " The reader is physically moving through an impossible architectural space.";
-    systemPrompt += " Each passage should feel like stepping into a new room or corridor of an infinite structure.";
+    systemPrompt += " The reader is physically moving through an architectural space.";
+   // systemPrompt += " Each passage should feel like stepping into a new room or corridor of an infinite structure.";
     systemPrompt += " Write no more than 3 paragraphs.";
-    systemPrompt += " Write in a style inspired by Borges, Calvino, or Danielewski.";
+    systemPrompt += " Write in a style that is literary, philosophical, and incorporates magical realism.";
     systemPrompt += " Write as though you are narrating the reader through a space.";
     systemPrompt += " The architecture itself is alive, responsive, and self-writing.";
     systemPrompt += " The last sentence is always complete with punctuation at the end.";
