@@ -218,7 +218,7 @@ class WordParticle {
   }
 }
 
-/ Enhanced WordParticleSystem with staggered spawning
+//Enhanced WordParticleSystem with staggered spawning
 class WordParticleSystem {
   constructor() {
     this.particles = [];
