@@ -135,7 +135,7 @@ function showLoadingMessage() {
   messageDiv.parent(messageArea);
   messageDiv.addClass("message");
 
-  let userNameSpan = createSpan("entry: ");
+  let userNameSpan = createSpan(" ");
   userNameSpan.parent(messageDiv);
   userNameSpan.addClass("username");
 
