@@ -372,12 +372,10 @@ function sendMessage(direction) {
     } else {
       systemPrompt += " Continue the narrative seamlessly, maintaining the same protagonist and spatial context.";
     }
-    systemPrompt += " You are a writer writing a novel."; 
-    systemPrompt += " The reader is physically moving through an architectural space.";
+    systemPrompt += " You are a writer writing a novel about a character traversing a building with a confusing and impossible structure."; 
     systemPrompt += " Write no more than 3 paragraphs.";
-    systemPrompt += " Write in a style that is literary, philosophical, and incorporates magical realism.";
-    systemPrompt += " Write as though you are narrating the reader through a space.";
-   // systemPrompt += " The architecture itself is alive, responsive, and self-writing.";
+    systemPrompt += " Write in a style that is literary and incorporates magical realism.";
+    systemPrompt += " Write as though you are narrating the reader through an architectural space.";
     systemPrompt += " The last sentence is always complete with punctuation at the end.";
     
     let maxTokens = 300;
