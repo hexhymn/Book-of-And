@@ -192,7 +192,7 @@ function completeStreaming(fullText) {
     // Update username to final state
     const username = streamingElement.parentElement.querySelector('.username');
     if (username) {
-      username.innerHTML = direction === "backward" ? "entry (retold): " : "entry: ";
+      username.innerHTML = direction === "backward" ? " " : " ";
     }
     
     // Ensure final text is complete
