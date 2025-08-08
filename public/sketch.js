@@ -56,6 +56,12 @@ let direction;
 //going to store which text field we listen to
 let currentPrompt = 0;
 
+//streaming variables
+let isStreaming = false;
+let streamingText = '';
+let streamingElement = null;
+
+
 function setup() {
   noCanvas();
 
@@ -114,15 +120,20 @@ function tokensInput(){
 }
 
 // Function to show loading message immediately
+// Client-side modifications for streaming (add these to your existing code)
+
+// Modify your existing showLoadingMessage function
 function showLoadingMessage() {
   isLoading = true;
+  isStreaming = false; // Reset streaming state
+  streamingText = ''; // Reset streaming text
+  
   let messageArea = select(".messages");
   messageArea.html(""); // Clear previous message
 
   let messageDiv = createDiv("");
   messageDiv.parent(messageArea);
   messageDiv.addClass("message");
-  messageDiv.addClass("loading"); // Add loading class for styling
 
   let userNameSpan = createSpan("entry: ");
   userNameSpan.parent(messageDiv);
@@ -131,11 +142,135 @@ function showLoadingMessage() {
   let messageBodySpan = createSpan("loading...");
   messageBodySpan.parent(messageDiv);
   messageBodySpan.addClass("messageBody");
-  messageBodySpan.addClass("loading-text"); // Add loading text class
+  messageBodySpan.addClass("loading-text");
+
+  // Store reference to the message body for streaming
+  streamingElement = messageBodySpan.elt;
 
   // Scroll to bottom
   messageArea.elt.parentElement.scrollTop = messageArea.elt.parentElement.scrollHeight;
 }
+
+// New function to handle streaming text display
+function startStreamingDisplay() {
+  if (streamingElement) {
+    streamingElement.innerHTML = "";
+    streamingElement.classList.remove("loading-text");
+    streamingElement.classList.add("streaming-text");
+    
+    // Update username to show it's generating
+    const username = streamingElement.parentElement.querySelector('.username');
+    if (username) {
+      username.innerHTML = "entry (generating): ";
+    }
+  }
+  isStreaming = true;
+  isLoading = false; // No longer in loading state
+}
+
+function appendStreamingText(chunk) {
+  if (streamingElement && isStreaming) {
+    streamingText += chunk;
+    streamingElement.innerHTML = streamingText;
+    
+    // Auto-scroll to keep up with new text
+    const messageArea = streamingElement.closest('.message-scroll');
+    if (messageArea) {
+      messageArea.scrollTop = messageArea.scrollHeight;
+    }
+  }
+}
+
+function completeStreaming(fullText) {
+  isStreaming = false;
+  isLoading = false;
+  
+  if (streamingElement) {
+    streamingElement.classList.remove("streaming-text");
+    streamingElement.classList.add("complete-text");
+    
+    // Update username to final state
+    const username = streamingElement.parentElement.querySelector('.username');
+    if (username) {
+      username.innerHTML = direction === "backward" ? "entry (retold): " : "entry: ";
+    }
+    
+    // Ensure final text is complete
+    streamingElement.innerHTML = fullText;
+    
+    // Final scroll
+    const messageArea = streamingElement.closest('.message-scroll');
+    if (messageArea) {
+      setTimeout(() => {
+        messageArea.scrollTop = messageArea.scrollHeight;
+      }, 100);
+    }
+  }
+  
+  // IMPORTANT: Include all the memory system logic from your original handler
+  console.log("Stream complete - updating memory system");
+  
+  // Always update the current text (whether new or regenerated)
+  lastGeneratedText = fullText;
+  
+  // Only add to history if it's a forward movement (new content)
+  // Regenerated content replaces the current moment
+  if (direction !== "backward") {
+    conversationHistory.push({
+      prompt: currentPrompt,
+      response: fullText,
+      timestamp: Date.now(),
+      direction: direction || 'forward'
+    });
+    
+    // Limit history size to prevent token overflow
+    if (conversationHistory.length > maxHistoryLength * 2) {
+      conversationHistory = conversationHistory.slice(-maxHistoryLength);
+    }
+  }
+  
+  console.log("Updated conversation history:", conversationHistory);
+}
+
+// Add new socket event listeners (add these to your existing socket events)
+
+// When streaming starts
+socket.on('stream-start', () => {
+  console.log('Stream starting...');
+  startStreamingDisplay();
+});
+
+// When each chunk arrives
+socket.on('stream-chunk', (data) => {
+  console.log('Received chunk:', data.chunk);
+  appendStreamingText(data.chunk);
+});
+
+// When streaming completes
+socket.on('stream-complete', (data) => {
+  console.log('Stream complete:', data.fullText);
+  completeStreaming(data.fullText);
+});
+
+// Handle streaming errors
+socket.on('stream-error', (errorMessage) => {
+  console.error('Streaming error:', errorMessage);
+  isStreaming = false;
+  isLoading = false;
+  
+  if (streamingElement) {
+    streamingElement.innerHTML = errorMessage;
+    streamingElement.classList.remove("loading-text", "streaming-text");
+    streamingElement.classList.add("error-text");
+  }
+});
+
+// Remove or comment out your old 'new message' handler since we're now using streaming
+/*
+socket.on('new message', (data) => {
+  // This is now handled by the streaming events above
+});
+*/
 
 function typeEffect(element, text, speed = 30) { // Original typing speed
   element.innerHTML = ""; // Clear existing text
@@ -336,37 +471,37 @@ socket.on('reconnect', () => {
   console.log('you have recconnected');
 });
 
-// Enhanced message handler with memory system and regeneration support
-socket.on('new message', (data) => {
-  console.log("Received new message:", data);
+// // Enhanced message handler with memory system and regeneration support
+// socket.on('new message', (data) => {
+//   console.log("Received new message:", data);
   
-  // Always update the current text (whether new or regenerated)
-  lastGeneratedText = data;
+//   // Always update the current text (whether new or regenerated)
+//   lastGeneratedText = data;
   
-  // Only add to history if it's a forward movement (new content)
-  // Regenerated content replaces the current moment
-  if (direction !== "backward") {
-    conversationHistory.push({
-      prompt: currentPrompt,
-      response: data,
-      timestamp: Date.now(),
-      direction: direction || 'forward'
-    });
+//   // Only add to history if it's a forward movement (new content)
+//   // Regenerated content replaces the current moment
+//   if (direction !== "backward") {
+//     conversationHistory.push({
+//       prompt: currentPrompt,
+//       response: data,
+//       timestamp: Date.now(),
+//       direction: direction || 'forward'
+//     });
     
-    // Limit history size to prevent token overflow
-    if (conversationHistory.length > maxHistoryLength * 2) {
-      conversationHistory = conversationHistory.slice(-maxHistoryLength);
-    }
-  }
+//     // Limit history size to prevent token overflow
+//     if (conversationHistory.length > maxHistoryLength * 2) {
+//       conversationHistory = conversationHistory.slice(-maxHistoryLength);
+//     }
+//   }
   
-  console.log("Updated conversation history:", conversationHistory);
+//   console.log("Updated conversation history:", conversationHistory);
   
-  let message = { 
-    username: direction === "backward" ? "entry (retold): " : "entry: ", 
-    message: data 
-  };
-  addChatMessage(message);
-});
+//   let message = { 
+//     username: direction === "backward" ? "entry (retold): " : "entry: ", 
+//     message: data 
+//   };
+//   addChatMessage(message);
+// });
 
 // listen for updates from ghost sketch
 socket.on('sketch-update', (data) => {
