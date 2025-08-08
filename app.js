@@ -85,7 +85,7 @@ async function streamText(socket, _prompt, _system_prompt, _max_tokens = 300, pr
         }
       ],
       max_completion_tokens: _max_tokens,
-      model: "gpt-4o-mini",
+      model: "gpt-4.1-mini",
       stream: true, // Enable streaming
       n: 1
     });
