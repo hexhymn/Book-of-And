@@ -372,7 +372,7 @@ function sendMessage(direction) {
     } else {
       systemPrompt += " Continue the narrative seamlessly, maintaining the same protagonist and spatial context.";
     }
-    
+    systemPrompt += " You are a writer writing a novel."; 
     systemPrompt += " The reader is physically moving through an architectural space.";
     systemPrompt += " Write no more than 3 paragraphs.";
     systemPrompt += " Write in a style that is literary, philosophical, and incorporates magical realism.";
