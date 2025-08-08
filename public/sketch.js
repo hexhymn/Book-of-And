@@ -372,7 +372,7 @@ function sendMessage(direction) {
     } else {
       systemPrompt += " Continue the narrative seamlessly, maintaining the same protagonist and spatial context.";
     }
-    systemPrompt += " You are a writer writing a novel about a character traversing a building with a confusing and impossible structure."; 
+    systemPrompt += " You are a writer writing a novel about a character traversing a tower."; 
     systemPrompt += " Write no more than 3 paragraphs.";
     systemPrompt += " Write in a style that is literary and incorporates magical realism.";
     systemPrompt += " Write as though you are narrating the reader through an architectural space.";
