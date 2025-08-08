@@ -29,25 +29,24 @@ let maxHistoryLength = 3; // Keep last 3 exchanges for context
 let pageContexts = {}; // Store the context for each page so we can regenerate it
 let currentPageKey = ""; // Track which page we're currently on
 
-//declare individual system prompts
-let sprompt1 = "The protagonist crosses a threshold into a new space. Describe its appearance.";
+//structure prompts
+let sprompt1 = "The protagonist opens a door or crosses a threshold into a new space. Describe its appearance.";
 
-let sprompt2 = "The protagonist is searching the space for something.  They discover something unexpected embedded in the space. This object or marking suggests someone else has been here before. The protagonist gains insight from this discovery.";
+let sprompt2 = "The protagonist is in a new room.  They discover something unexpected embedded in the space. This object or marking suggests someone else has been here before. The protagonist gains insight from this discovery.";
 
-let sprompt3 = "The protagonist notices a pattern repeating throughout this space. Include the protagonist's growing awareness that these motifs might be a form of communication or navigation system within the structure.";
+let sprompt3 = "The protagonist interacts with the walls or has an internal observation of the walls of the room they are in. Include the protagonist's growing curiosity and desire to continue to explore and understand the space they have entered.";
 
-let sprompt4 = "A sudden change transforms how the protagonist perceives this space. This illumination reveals details previously hidden and suggests the building itself is even larger than anticipated.";
+let sprompt4 = "A window of any shape or size has been noticed. The protagonist looks out the window- describe what they see. This illumination reveals details previously hidden and suggests the building itself is even larger than anticipated.";
 
-let sprompt5 = "The protagonist experiences temporal displacement - hearing impressions of other eras or futures. Include sensory details from at least two time periods simultaneously.";
+let sprompt5 = "The protagonist navigates and walks through a hallway. They experience temporal displacement - hearing impressions of other eras or futures. Include sensory details.";
 
 let sprompt6 = "The protagonist hears sounds suggesting that something else is in the space. They encounter a new character.";
 
-let sprompt7 = "The protagonist and new character continue to navigate the structure. As they begin to traverse it, describe how their sense of orientation becomes confused.";
+let sprompt7 = "The protagonist and new character continue to navigate the structure. As they begin to traverse it, they become heavily aware of a strange detail about the floor they are walking on.";
 
-let sprompt8 = "The protagonist realizes that their path through the building is somehow connected to paths taken by others.  Anyone traveling with the protagonist will now have to go separate ways.";
+let sprompt8 = "The protagonist looks up at the ceiling. Anyone traveling with the protagonist will now have to go separate ways.";
 
-let sprompt9 = "The protagonist has moved through several rooms. The protagonist finds a new threshold or door.";
-
+let sprompt9 = "The protagonist finds a stairwell and either ascends a level in the space they are navigating. The protagonist sees a new threshold or door at the top.";
 
 //declare array of system prompts
 let systemPrompts =[sprompt1,sprompt2,sprompt3,sprompt4,sprompt5,sprompt6,sprompt7,sprompt8,sprompt9];
