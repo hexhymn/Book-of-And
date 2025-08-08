@@ -161,7 +161,7 @@ function startStreamingDisplay() {
     // Update username to show it's generating
     const username = streamingElement.parentElement.querySelector('.username');
     if (username) {
-      username.innerHTML = "entry (generating): ";
+      username.innerHTML = " ";
     }
   }
   isStreaming = true;
