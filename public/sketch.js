@@ -386,7 +386,7 @@ function sendMessage(direction) {
     } else {
       systemPrompt += " Continue the narrative seamlessly, maintaining the same protagonist and spatial context.";
     }
-    systemPrompt += " You are a writer writing a novel about a character traversing a tower."; 
+    systemPrompt += " You are a writer writing a novel about a character traversing a building."; 
     systemPrompt += " write in the second person.";
     systemPrompt += " Use concise language.";
     systemPrompt += " Write no more than 3 paragraphs.";
