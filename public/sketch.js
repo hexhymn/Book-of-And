@@ -10,9 +10,6 @@ const socket = io();
 let connected = false;
 let isLoading = false; // Add loading state variable
 
-// Global flag to prevent multiple socket setups
-let socketInitialized = false;
-
 // Initialize variables
 
 // HTML elements
@@ -64,90 +61,6 @@ let isStreaming = false;
 let streamingText = '';
 let streamingElement = null;
 
-// Clean up ALL socket event listeners before adding new ones
-function cleanupSocketListeners() {
-  if (typeof socket !== 'undefined') {
-    socket.off('connect');
-    socket.off('reconnect');
-    socket.off('disconnect');
-    socket.off('stream-start');
-    socket.off('stream-chunk');
-    socket.off('stream-complete');
-    socket.off('stream-error');
-    socket.off('new message');
-    socket.off('sketch-update');
-  }
-}
-
-// Initialize socket connection ONCE
-function initializeSocket() {
-  if (socketInitialized) {
-    console.log('Socket already initialized, skipping...');
-    return;
-  }
-  
-  console.log('Initializing socket connection...');
-  socketInitialized = true;
-  
-  // Clean up any existing listeners first
-  cleanupSocketListeners();
-  
-  // Set up connection handlers
-  socket.on('connect', () => {
-    connected = true;
-    console.log('Connected to server - Socket ID:', socket.id);
-    
-    // Identify this sketch type
-    socket.emit('identify-sketch', { type: 'text' });
-  });
-
-  socket.on('reconnect', () => {
-    connected = true;
-    console.log('Reconnected to server');
-    socket.emit('identify-sketch', { type: 'text' });
-  });
-
-  socket.on('disconnect', (reason) => {
-    connected = false;
-    console.log('Disconnected:', reason);
-    
-    // Reset states
-    isLoading = false;
-    isStreaming = false;
-  });
-
-  // Set up streaming handlers
-  socket.on('stream-start', () => {
-    console.log('Stream starting...');
-    startStreamingDisplay();
-  });
-
-  socket.on('stream-chunk', (data) => {
-    console.log('Received chunk:', data.chunk);
-    appendStreamingText(data.chunk);
-  });
-
-  socket.on('stream-complete', (data) => {
-    console.log('Stream complete:', data.fullText);
-    completeStreaming(data.fullText);
-  });
-
-  socket.on('stream-error', (errorMessage) => {
-    console.error('Streaming error:', errorMessage);
-    isStreaming = false;
-    isLoading = false;
-    
-    if (streamingElement) {
-      streamingElement.innerHTML = errorMessage;
-      streamingElement.classList.remove("loading-text", "streaming-text");
-      streamingElement.classList.add("error-text");
-    }
-  });
-
-  socket.on('sketch-update', (data) => {
-    console.log('Received update from other sketch:', data);
-  });
-}
 
 function setup() {
   noCanvas();
@@ -160,9 +73,6 @@ function setup() {
 
   //listen for slider value changes
   numTokens.input(tokensInput);
-
-  // Initialize socket ONCE
-  initializeSocket();
 
   // Add button event listeners
   console.log("Setting up navigation buttons...");
@@ -177,45 +87,32 @@ function setup() {
 
     if (prevButton) {
       console.log("Adding event listener to previous button");
-      // Remove any existing listeners first
-      prevButton.removeEventListener('click', handlePreviousClick);
-      prevButton.addEventListener('click', handlePreviousClick);
+      prevButton.addEventListener('click', () => {
+        console.log("Previous button clicked!");
+        if (!isLoading) { // Prevent multiple clicks while loading
+          showLoadingMessage(); // Show loading immediately
+          sendMessage("backward");
+        }
+      });
     } else {
       console.error("Previous button not found!");
     }
 
     if (nextButton) {
       console.log("Adding event listener to next button");
-      // Remove any existing listeners first
-      nextButton.removeEventListener('click', handleNextClick);
-      nextButton.addEventListener('click', handleNextClick);
+      nextButton.addEventListener('click', () => {
+        console.log("Next button clicked!");
+        if (!isLoading) { // Prevent multiple clicks while loading
+          showLoadingMessage(); // Show loading immediately
+          sendMessage("forward");
+        }
+      });
     } else {
       console.error("Next button not found!");
     }
   }, 100);
 
   sendMessage();
-}
-
-// Separate click handlers to prevent duplication
-function handlePreviousClick() {
-  console.log("Previous button clicked!");
-  if (!isLoading && !isStreaming && connected) {
-    showLoadingMessage();
-    sendMessage("backward");
-  } else {
-    console.log('Cannot navigate: loading=', isLoading, 'streaming=', isStreaming, 'connected=', connected);
-  }
-}
-
-function handleNextClick() {
-  console.log("Next button clicked!");
-  if (!isLoading && !isStreaming && connected) {
-    showLoadingMessage();
-    sendMessage("forward");
-  } else {
-    console.log('Cannot navigate: loading=', isLoading, 'streaming=', isStreaming, 'connected=', connected);
-  }
 }
 
 function tokensInput(){
@@ -335,6 +232,46 @@ function completeStreaming(fullText) {
   console.log("Updated conversation history:", conversationHistory);
 }
 
+// Add new socket event listeners (add these to your existing socket events)
+
+// When streaming starts
+socket.on('stream-start', () => {
+  console.log('Stream starting...');
+  startStreamingDisplay();
+});
+
+// When each chunk arrives
+socket.on('stream-chunk', (data) => {
+  console.log('Received chunk:', data.chunk);
+  appendStreamingText(data.chunk);
+});
+
+// When streaming completes
+socket.on('stream-complete', (data) => {
+  console.log('Stream complete:', data.fullText);
+  completeStreaming(data.fullText);
+});
+
+// Handle streaming errors
+socket.on('stream-error', (errorMessage) => {
+  console.error('Streaming error:', errorMessage);
+  isStreaming = false;
+  isLoading = false;
+  
+  if (streamingElement) {
+    streamingElement.innerHTML = errorMessage;
+    streamingElement.classList.remove("loading-text", "streaming-text");
+    streamingElement.classList.add("error-text");
+  }
+});
+
+// Remove or comment out your old 'new message' handler since we're now using streaming
+/*
+socket.on('new message', (data) => {
+  // This is now handled by the streaming events above
+});
+*/
+
 function typeEffect(element, text, speed = 30) { // Original typing speed
   element.innerHTML = ""; // Clear existing text
   
@@ -371,20 +308,6 @@ function typeEffect(element, text, speed = 30) { // Original typing speed
 
 // Enhanced sendMessage function with memory system and page regeneration
 function sendMessage(direction) {
-  console.log('sendMessage called with direction:', direction);
-  console.log('Current state - connected:', connected, 'isLoading:', isLoading, 'isStreaming:', isStreaming);
-  
-  // Prevent multiple simultaneous requests
-  if (isLoading || isStreaming) {
-    console.log('Already processing, ignoring request');
-    return;
-  }
-  
-  if (!connected) {
-    console.log('Not connected, cannot send message');
-    return;
-  }
-  
   let prompt = "";
   
   // Create a unique key for each page based on prompt and position in story
@@ -468,23 +391,15 @@ function sendMessage(direction) {
        direction: direction
      });
    
-     // Send the chat request with error handling
-     try {
-       socket.emit('chat', {
-         _prompt: prompt,  // NOW THIS CONTAINS THE PREVIOUS STORY CONTEXT!
-         _system_prompt: systemPrompt, 
-         _max_tokens: maxTokens,
-         _current_prompt: currentPrompt,
-         _direction: direction,
-         _is_regeneration: direction === "backward", // Flag for server
-         _history: conversationHistory.slice(-maxHistoryLength) // Send recent history
-       });
-       console.log('Chat request sent successfully');
-     } catch (error) {
-       console.error('Error sending chat request:', error);
-       isLoading = false;
-       isStreaming = false;
-     }
+     socket.emit('chat', {
+       _prompt: prompt,  // NOW THIS CONTAINS THE PREVIOUS STORY CONTEXT!
+       _system_prompt: systemPrompt, 
+       _max_tokens: maxTokens,
+       _current_prompt: currentPrompt,
+       _direction: direction,
+       _is_regeneration: direction === "backward", // Flag for server
+       _history: conversationHistory.slice(-maxHistoryLength) // Send recent history
+     });
   }
 }
 
@@ -527,11 +442,11 @@ function cleanInput(input){
 
 //if button pressed sendMessage() 
 function keyPressed(){
-  if (keyCode === RIGHT && !isLoading && !isStreaming && connected) { // Enhanced checks
+  if (keyCode === RIGHT && !isLoading) { // Prevent key presses while loading
     showLoadingMessage(); // Show loading immediately
     sendMessage("forward");
   }
-  else if (keyCode === LEFT && !isLoading && !isStreaming && connected){  // Enhanced checks
+  else if (keyCode === LEFT && !isLoading){  // Prevent key presses while loading
     showLoadingMessage(); // Show loading immediately
     sendMessage("backward");
   }
@@ -540,6 +455,62 @@ function keyPressed(){
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
+
+// Connect to Node.JS Server
+// Socket events
+
+socket.on('connect', () => {
+  connected = true;
+  console.log('connected to the server');
+});
+
+socket.on('reconnect', () => {
+  connected = true;
+  console.log('you have recconnected');
+});
+
+// // Enhanced message handler with memory system and regeneration support
+// socket.on('new message', (data) => {
+//   console.log("Received new message:", data);
+  
+//   // Always update the current text (whether new or regenerated)
+//   lastGeneratedText = data;
+  
+//   // Only add to history if it's a forward movement (new content)
+//   // Regenerated content replaces the current moment
+//   if (direction !== "backward") {
+//     conversationHistory.push({
+//       prompt: currentPrompt,
+//       response: data,
+//       timestamp: Date.now(),
+//       direction: direction || 'forward'
+//     });
+    
+//     // Limit history size to prevent token overflow
+//     if (conversationHistory.length > maxHistoryLength * 2) {
+//       conversationHistory = conversationHistory.slice(-maxHistoryLength);
+//     }
+//   }
+  
+//   console.log("Updated conversation history:", conversationHistory);
+  
+//   let message = { 
+//     username: direction === "backward" ? "entry (retold): " : "entry: ", 
+//     message: data 
+//   };
+//   addChatMessage(message);
+// });
+
+// listen for updates from ghost sketch
+socket.on('sketch-update', (data) => {
+  console.log('Received update from other sketch:', data);
+  // handle updates from the pepper's ghost sketch if needed
+});
+
+socket.on('disconnect', () => {
+  connected = false;
+  console.log('you have been disconnected');
+});
 
 /// Keyboard-only fullscreen controls
 document.addEventListener('keydown', (e) => {
