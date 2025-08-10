@@ -51,7 +51,7 @@ function preload() {
     tileImages['threshold'] = loadImage('tiles/lab-stair4.png');
     tileImages['room'] = loadImage('tiles/lab-room1.png');
     // Add any additional default tiles
-    tileImages['default1'] = loadImage('tiles/lab-stair.png');
+    tileImages['default'] = loadImage('tiles/lab-stair.png');
     // tileImages['default2'] = loadImage('tiles/tile2.png');
 }
 
