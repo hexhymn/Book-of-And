@@ -19,13 +19,21 @@
           justify-content: center;
           align-items: center;
           height: 100vh;
+          width: 100vw;
         }
         
         /* Target the canvas specifically */
         canvas {
           display: block;
         }
-      </style>
+        
+        /* Hide the sketch container if it has any default styling */
+        #sketch-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+    </style>
 </head>
 <body>
     <div id="controls">
