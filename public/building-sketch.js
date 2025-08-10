@@ -72,10 +72,10 @@ function setup() {
 }
 
 function draw() {
-    background(52, 73, 94);
+    background(0);
     
     // Draw the circular boundary (optional - for visualization)
-    stroke(255, 255, 255, 30);
+    noStroke();
     strokeWeight(1);
     noFill();
     ellipse(centerX, centerY, circleRadius * 2, circleRadius * 2);
