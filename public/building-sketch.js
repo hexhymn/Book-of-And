@@ -51,7 +51,7 @@ function preload() {
     tileImages['threshold'] = loadImage('tiles/lab-stair4.png');
     tileImages['room'] = loadImage('tiles/lab-room1.png');
     // Add any additional default tiles
-    // tileImages['default1'] = loadImage('tiles/tile1.png');
+    tileImages['default1'] = loadImage('tiles/lab-stair.png');
     // tileImages['default2'] = loadImage('tiles/tile2.png');
 }
 
@@ -82,6 +82,12 @@ function draw() {
     
     // Increment time for sine animations
     time += 0.02;
+
+    // Reset used keywords periodically to prevent infinite accumulation
+    if (frameCount % 1800 === 0) { // Every ~30 seconds at 60fps
+        usedKeywords = usedKeywords.slice(-50); // Keep only recent 50
+        console.log('Cleaned usedKeywords array, now has:', usedKeywords.length, 'items');
+    }
     
     // Draw connection lines first (so they appear behind tiles)
     stroke(255, 255, 255, 80);
@@ -205,6 +211,11 @@ function addTileToArray(tileType = 'default') {
     }
     
     tiles.push(newTile);
+
+    if (tiles.length > 100) {
+        tiles.splice(0, 20); // Remove oldest 20 tiles
+      }
+
     console.log(`Added tile: ${tileType} at (${newTile.x.toFixed(1)}, ${newTile.y.toFixed(1)})`);
 }
 
@@ -225,6 +236,14 @@ function initializeWebSocket() {
     socket.on('disconnect', () => {
         connected = false;
         console.log('Tile sketch disconnected from server');
+        
+        // Add reconnection logic:
+        setTimeout(() => {
+            if (!connected) {
+                socket.connect(); // Attempt reconnection
+                console.log('Tile sketch attempting reconnection...');
+            }
+        }, 5000);
     });
     
     // Listen for text generation events

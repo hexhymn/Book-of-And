@@ -510,6 +510,21 @@ socket.on('sketch-update', (data) => {
 socket.on('disconnect', () => {
   connected = false;
   console.log('you have been disconnected');
+  
+  // Add reconnection logic:
+  setTimeout(() => {
+      if (!connected) {
+          socket.connect(); // Attempt reconnection
+          console.log('Main sketch attempting reconnection...');
+          
+          // You might also want to update the UI to show reconnection status
+          if (isLoading) {
+              // Reset loading state if we were in the middle of something
+              isLoading = false;
+              isStreaming = false;
+          }
+      }
+  }, 5000);
 });
 
 /// Keyboard-only fullscreen controls

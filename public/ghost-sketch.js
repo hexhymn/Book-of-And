@@ -235,9 +235,18 @@ socket.on('book-data', (data) => {
   }
 });
 
+// Replace the existing socket.on('disconnect') handler:
 socket.on('disconnect', () => {
   connected = false;
   console.log('Word web visualization disconnected');
+  
+  // Add reconnection logic:
+  setTimeout(() => {
+      if (!connected) {
+          socket.connect(); // Attempt reconnection
+          console.log('Ghost sketch attempting reconnection...');
+      }
+  }, 5000);
 });
 
 console.log("Ghost sketch setup complete");
