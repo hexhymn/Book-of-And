@@ -1,4 +1,4 @@
-
+// Enhanced tile sketch with better connection debugging and event handling
 
 // Global variables
 let tileImages = []; // Array to hold your PNG tile images
@@ -14,23 +14,39 @@ let time = 0; // Global time variable for sine animations
 // WebSocket connection
 let socket;
 let connected = false;
+let connectionStatus = "Disconnected";
 
-// Keyword to tile mapping
+// Enhanced keyword to tile mapping
 let keywordTileMap = {
-    'stair': 'lab-stair.png',
-    'stairs': 'lab-stair.png',
-    'door': 'lab-door1.png',
-    'window': 'lab-stair2.png',
-    'floor': 'lab-floor1.png',
-    'wall': 'lab-wall1.png',
-    'ceiling': 'lab-ceiling1.png',
-    'hallway': 'lab-stair3.png',
-    'threshold': 'lab-door1.png',
-    'room': 'lab-room1room.png'
+    'stair': 'stair',
+    'stairs': 'stair',
+    'stairwell': 'stair',
+    'door': 'door',
+    'doors': 'door',
+    'window': 'window',
+    'windows': 'window',
+    'floor': 'floor',
+    'floors': 'floor',
+    'wall': 'wall',
+    'walls': 'wall',
+    'ceiling': 'ceiling',
+    'ceilings': 'ceiling',
+    'hallway': 'hallway',
+    'hallways': 'hallway',
+    'corridor': 'hallway',
+    'threshold': 'threshold',
+    'thresholds': 'threshold',
+    'room': 'room',
+    'rooms': 'room',
+    'chamber': 'room',
+    'space': 'room'
 };
 
-// Track which keywords have been used
+// Track which keywords have been used and debugging info
 let usedKeywords = [];
+let debugMessages = [];
+let lastReceivedText = "";
+let totalChunksReceived = 0;
 
 // Preload your tile images here
 function preload() {
@@ -45,10 +61,9 @@ function preload() {
     tileImages['threshold'] = loadImage('tiles/lab-stair4.png');
     tileImages['room'] = loadImage('tiles/lab-room1.png');
     
-    // Add any additional default tiles
-    // tileImages['default1'] = loadImage('tiles/tile1.png');
-    // tileImages['default2'] = loadImage('tiles/tile2.png');
+    console.log("Tile images loaded");
 }
+
 function setup() {
     let canvas = createCanvas(canvasWidth, canvasHeight);
     canvas.parent('sketch-container');
@@ -58,6 +73,9 @@ function setup() {
     
     // Initialize with 1 starting tile
     addTileToArray('default');
+    
+    // Add debugging info
+    addDebugMessage("Tile sketch initialized");
 }
 
 function draw() {
@@ -65,6 +83,9 @@ function draw() {
     
     // Increment time for sine animations
     time += 0.02;
+    
+    // Draw connection status and debug info
+    drawDebugInfo();
     
     // Draw connection lines first (so they appear behind tiles)
     stroke(255, 255, 255, 80);
@@ -93,29 +114,67 @@ function draw() {
         // Opacity pulsing for breathing effect
         let opacity = 0.7 + sin(time * 1.2 + tile.opacityPhase) * 0.3;
         
-        // Draw all tiles
-        for (let tile of tiles) {
-            if (tile.tileKey && tileImages[tile.tileKey]) {
-                // Use specific keyword tile image
-                let img = tileImages[tile.tileKey];
-                push();
-                translate(tile.x, animatedY);
-                rotate(rotation);
-                
-                // Apply opacity
-                tint(255, opacity * 255);
-                
-                imageMode(CENTER);
-                image(img, 0, 0, animatedSize, animatedSize);
-                
-                // Remove tint for next tile
-                noTint();
-                pop();
-            } else {
-                // Fallback to colored diamonds with sine effects
-                drawAnimatedIsometricTile(tile.x, animatedY, tile.color, animatedSize, rotation, opacity);
-            }
+        // Draw tile based on type
+        if (tile.tileKey && tileImages[tile.tileKey]) {
+            // Use specific keyword tile image
+            let img = tileImages[tile.tileKey];
+            push();
+            translate(tile.x, animatedY);
+            rotate(rotation);
+            
+            // Apply opacity
+            tint(255, opacity * 255);
+            
+            imageMode(CENTER);
+            image(img, 0, 0, animatedSize, animatedSize);
+            
+            // Remove tint for next tile
+            noTint();
+            pop();
+        } else {
+            // Fallback to colored diamonds with sine effects
+            drawAnimatedIsometricTile(tile.x, animatedY, tile.color, animatedSize, rotation, opacity);
         }
+    }
+}
+
+function drawDebugInfo() {
+    // Connection status
+    fill(connected ? color(46, 204, 113) : color(231, 76, 60));
+    noStroke();
+    ellipse(20, 20, 16, 16);
+    
+    fill(255);
+    textSize(12);
+    text(connectionStatus, 45, 25);
+    
+    // Stats
+    text(`Tiles: ${tiles.length}`, 45, 45);
+    text(`Keywords used: ${usedKeywords.length}`, 45, 65);
+    text(`Chunks received: ${totalChunksReceived}`, 45, 85);
+    
+    // Recent debug messages (last 5)
+    let recentMessages = debugMessages.slice(-5);
+    for (let i = 0; i < recentMessages.length; i++) {
+        fill(255, 200);
+        text(recentMessages[i], 45, 105 + i * 15);
+    }
+    
+    // Last received text preview (first 50 chars)
+    if (lastReceivedText.length > 0) {
+        fill(200, 255, 200);
+        text("Last text: " + lastReceivedText.substring(0, 50) + "...", 45, 200);
+    }
+}
+
+function addDebugMessage(message) {
+    let timestamp = new Date().toLocaleTimeString();
+    debugMessages.push(`${timestamp}: ${message}`);
+    console.log(message);
+    
+    // Keep only last 20 messages
+    if (debugMessages.length > 20) {
+        debugMessages = debugMessages.slice(-20);
     }
 }
 
@@ -174,82 +233,149 @@ function addTileToArray(tileType = 'default') {
     }
     
     tiles.push(newTile);
-    console.log(`Added tile: ${tileType}`);
+    addDebugMessage(`Added tile: ${tileType} (total: ${tiles.length})`);
 }
 
-function addRandomTile() {
-    addTileToArray('default');
-}
-
-// WebSocket initialization and event handlers
+// Enhanced WebSocket initialization with better error handling
 function initializeWebSocket() {
-    // Connect to the same server as your text sketch
-    socket = io();
-    
-    socket.on('connect', () => {
-        connected = true;
-        console.log('Tile sketch connected to server');
-    });
-    
-    socket.on('disconnect', () => {
-        connected = false;
-        console.log('Tile sketch disconnected from server');
-    });
-    
-    // Listen for text generation events
-    socket.on('book-data', (data) => {
-        if (data.type === 'new-text') {
-            console.log('Received new text:', data.content);
-            processTextForKeywords(data.content);
-        }
-    });
-    
-    // Listen for streaming chunks to detect keywords in real-time
-    socket.on('stream-chunk', (data) => {
-        if (data.chunk) {
-            processTextForKeywords(data.chunk);
-        }
-    });
-    
-    // Listen for complete text
-    socket.on('stream-complete', (data) => {
-        console.log('Full text received:', data.fullText);
-        processTextForKeywords(data.fullText);
-    });
+    try {
+        // Connect to the same server as your text sketch
+        socket = io();
+        
+        socket.on('connect', () => {
+            connected = true;
+            connectionStatus = "Connected";
+            addDebugMessage('Tile sketch connected to server');
+            
+            // Identify this sketch to the server
+            socket.emit('identify-sketch', { type: 'tile' });
+        });
+        
+        socket.on('disconnect', () => {
+            connected = false;
+            connectionStatus = "Disconnected";
+            addDebugMessage('Tile sketch disconnected from server');
+        });
+        
+        socket.on('reconnect', () => {
+            connected = true;
+            connectionStatus = "Reconnected";
+            addDebugMessage('Tile sketch reconnected to server');
+            
+            // Re-identify after reconnection
+            socket.emit('identify-sketch', { type: 'tile' });
+        });
+        
+        // Listen for the book-data event (your original method)
+        socket.on('book-data', (data) => {
+            addDebugMessage(`Received book-data: ${data.type}`);
+            
+            if (data.type === 'new-text') {
+                lastReceivedText = data.content;
+                addDebugMessage(`Processing text: ${data.content.substring(0, 30)}...`);
+                processTextForKeywords(data.content);
+            }
+        });
+        
+        // Listen for streaming chunks to detect keywords in real-time
+        socket.on('stream-chunk', (data) => {
+            totalChunksReceived++;
+            
+            if (data.chunk) {
+                lastReceivedText += data.chunk;
+                processTextForKeywords(data.chunk);
+            }
+        });
+        
+        // Enhanced: Listen for text chunks specifically formatted for tiles
+        socket.on('text-chunk-for-tiles', (data) => {
+            addDebugMessage(`Tile-specific chunk received`);
+            
+            if (data.chunk) {
+                processTextForKeywords(data.chunk);
+            }
+        });
+        
+        // Listen for complete text
+        socket.on('stream-complete', (data) => {
+            addDebugMessage(`Stream complete - full text length: ${data.fullText.length}`);
+            lastReceivedText = data.fullText;
+            processTextForKeywords(data.fullText);
+        });
+        
+        // Enhanced: Listen for tile-specific completion event
+        socket.on('text-complete-for-tiles', (data) => {
+            addDebugMessage(`Tile processing complete - words: ${data.wordCount}`);
+            processTextForKeywords(data.fullText);
+        });
+        
+        // Listen for page turn events
+        socket.on('page-turn-event', (data) => {
+            addDebugMessage(`Page turn: ${data.direction} (prompt ${data.currentPromptIndex})`);
+            
+            // You could add special behavior for page turns here
+            // For example, add a special "transition" tile
+            if (data.direction === 'forward') {
+                addTileToArray('threshold');
+            }
+        });
+        
+        // Error handling
+        socket.on('connect_error', (error) => {
+            connectionStatus = "Connection Error";
+            addDebugMessage(`Connection error: ${error.message}`);
+        });
+        
+        socket.on('stream-error', (errorMessage) => {
+            addDebugMessage(`Stream error: ${errorMessage}`);
+        });
+        
+    } catch (error) {
+        addDebugMessage(`WebSocket initialization error: ${error.message}`);
+    }
 }
 
-// Function to analyze text and add tiles based on keywords
+// Enhanced function to analyze text and add tiles based on keywords
 function processTextForKeywords(text) {
     if (!text) return;
     
     let lowerText = text.toLowerCase();
+    let foundKeywords = [];
     
     // Check for each keyword
     for (let keyword in keywordTileMap) {
         if (lowerText.includes(keyword) && !usedKeywords.includes(keyword)) {
-            console.log(`Found keyword: ${keyword}`);
-            addTileToArray(keyword);
-            usedKeywords.push(keyword);
+            foundKeywords.push(keyword);
+            let tileType = keywordTileMap[keyword];
             
-            // Optional: Add a small delay between tile additions
-            // if multiple keywords are found
-            break; // Only add one tile per text chunk
+            addDebugMessage(`Found keyword: "${keyword}" -> tile: ${tileType}`);
+            addTileToArray(tileType);
+            usedKeywords.push(keyword);
         }
+    }
+    
+    // If no specific keywords found but we have new text, add a default tile occasionally
+    if (foundKeywords.length === 0 && text.length > 20 && random() < 0.3) {
+        addTileToArray('default');
+        addDebugMessage(`Added default tile for text length: ${text.length}`);
     }
 }
 
 // Function to reset used keywords (useful for testing)
 function resetKeywords() {
     usedKeywords = [];
-    console.log('Reset used keywords');
+    addDebugMessage('Reset used keywords');
 }
 
 // Function to clear all tiles and start fresh
 function clearAllTiles() {
     tiles = [];
     usedKeywords = [];
+    debugMessages = [];
+    lastReceivedText = "";
+    totalChunksReceived = 0;
     addTileToArray('default');
-    console.log('Cleared all tiles and reset');
+    addDebugMessage('Cleared all tiles and reset');
 }
 
 function drawAnimatedIsometricTile(x, y, tileColor, size, rotation, opacity) {
@@ -297,14 +423,19 @@ function drawAnimatedIsometricTile(x, y, tileColor, size, rotation, opacity) {
     pop();
 }
 
-// Optional: Click anywhere to add a tile at that position
+// Enhanced mouse interaction with debugging
 function mousePressed() {
     if (mouseX >= 0 && mouseX <= canvasWidth && mouseY >= 0 && mouseY <= canvasHeight) {
+        // Test keyword detection
+        let testKeywords = Object.keys(keywordTileMap);
+        let randomKeyword = random(testKeywords);
+        let tileType = keywordTileMap[randomKeyword];
+        
         let newTile = {
             x: mouseX,
             y: mouseY,
             color: random(tileColors),
-            tileKey: 'default',
+            tileKey: tileType,
             baseSize: random(30, 60),
             // Sine animation properties
             phaseOffset: random(TWO_PI),
@@ -316,10 +447,12 @@ function mousePressed() {
             opacityPhase: random(TWO_PI)
         };
         tiles.push(newTile);
+        
+        addDebugMessage(`Manual tile added: ${tileType} at (${mouseX}, ${mouseY})`);
     }
 }
 
-// Keyboard shortcut: press 'r' to reset with 1 new tile
+// Enhanced keyboard shortcuts
 function keyPressed() {
     if (key === 'r' || key === 'R') {
         clearAllTiles();
@@ -332,7 +465,26 @@ function keyPressed() {
     else if (key === 't' || key === 'T') {
         let keywords = Object.keys(keywordTileMap);
         let randomKeyword = random(keywords);
-        addTileToArray(randomKeyword);
-        console.log(`Test: Added ${randomKeyword} tile`);
+        let tileType = keywordTileMap[randomKeyword];
+        addTileToArray(tileType);
+        addDebugMessage(`Test: Added ${tileType} tile for keyword "${randomKeyword}"`);
+    }
+    // Press 'd' to toggle debug info visibility
+    else if (key === 'd' || key === 'D') {
+        // You can add a debug visibility toggle here if needed
+        addDebugMessage('Debug info refresh');
+    }
+    // Press 'c' to test connection
+    else if (key === 'c' || key === 'C') {
+        if (socket && connected) {
+            socket.emit('sketch-sync', { 
+                type: 'tile-test', 
+                message: 'Testing connection from tile sketch',
+                timestamp: Date.now()
+            });
+            addDebugMessage('Sent test message to server');
+        } else {
+            addDebugMessage('Cannot test - not connected');
+        }
     }
 }
