@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Isometric Tile Lab</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
-    <link rel="stylesheet" href="style.css">
 
     <style>
         body {
@@ -22,12 +21,10 @@
           width: 100vw;
         }
         
-        /* Target the canvas specifically */
         canvas {
           display: block;
         }
         
-        /* Hide the sketch container if it has any default styling */
         #sketch-container {
           display: flex;
           justify-content: center;
@@ -36,11 +33,9 @@
     </style>
 </head>
 <body>
-    <div id="controls">
-        <button onclick="addRandomTile()">Add Random Tile</button>
-        <button onclick="resetKeywords()">Reset Keywords</button>
-        <button onclick="clearAllTiles()">Clear All</button>
-    </div>
+    <!-- COMPLETELY REMOVE THIS DIV -->
+    <!-- <div id="controls">...</div> -->
+    
     <div id="sketch-container"></div>
 
     <script src="/socket.io/socket.io.js"></script>
