@@ -61,6 +61,8 @@ let isStreaming = false;
 let streamingText = '';
 let streamingElement = null;
 
+let loadingTimeout; 
+
 
 function setup() {
   noCanvas();
@@ -122,11 +124,10 @@ function tokensInput(){
 // Function to show loading message immediately
 // Client-side modifications for streaming (add these to your existing code)
 
-// Modify your existing showLoadingMessage function
 function showLoadingMessage() {
   isLoading = true;
-  isStreaming = false; // Reset streaming state
-  streamingText = ''; // Reset streaming text
+  isStreaming = false;
+  streamingText = '';
   
   let messageArea = select(".messages");
   messageArea.html(""); // Clear previous message
@@ -139,13 +140,20 @@ function showLoadingMessage() {
   userNameSpan.parent(messageDiv);
   userNameSpan.addClass("username");
 
-  let messageBodySpan = createSpan("loading...");
+  let messageBodySpan = createSpan(""); // Start with empty content
   messageBodySpan.parent(messageDiv);
   messageBodySpan.addClass("messageBody");
-  messageBodySpan.addClass("loading-text");
 
-  // Store reference to the message body for streaming
+  // Store reference for streaming
   streamingElement = messageBodySpan.elt;
+
+  // Wait 800ms before showing "loading..." text
+  loadingTimeout = setTimeout(() => {
+    if (isLoading && !isStreaming) { // Only show if still loading and not streaming yet
+      messageBodySpan.html("loading...");
+      messageBodySpan.addClass("loading-text");
+    }
+  }, 800); // Adjust this delay as needed
 
   // Scroll to bottom
   messageArea.elt.parentElement.scrollTop = messageArea.elt.parentElement.scrollHeight;
@@ -153,6 +161,12 @@ function showLoadingMessage() {
 
 // New function to handle streaming text display
 function startStreamingDisplay() {
+  // Clear the loading timeout since we're starting to stream
+  if (loadingTimeout) {
+    clearTimeout(loadingTimeout);
+    loadingTimeout = null;
+  }
+
   if (streamingElement) {
     streamingElement.innerHTML = "";
     streamingElement.classList.remove("loading-text");
@@ -165,7 +179,7 @@ function startStreamingDisplay() {
     }
   }
   isStreaming = true;
-  isLoading = false; // No longer in loading state
+  isLoading = false;
 }
 
 function appendStreamingText(chunk) {

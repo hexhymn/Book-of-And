@@ -58,6 +58,8 @@ function preload() {
 function setup() {
     let canvas = createCanvas(canvasWidth, canvasHeight);
     canvas.parent('sketch-container');
+
+    frameRate(30);
     
     // Set up circle constraints
     centerX = canvasWidth / 2;
