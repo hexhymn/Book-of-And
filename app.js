@@ -29,6 +29,10 @@ app.get('/ghost', (req, res) => {
   res.sendFile(__dirname + '/public/ghost.html');
 });
 
+app.get('/lab', (req, res) => {
+  res.sendFile(__dirname + '/public/lab.html');
+});
+
 server.listen(port, '0.0.0.0', () => {
   console.log(`Server listening on 0.0.0.0:${port}`);
 });

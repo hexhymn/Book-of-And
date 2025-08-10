@@ -60,7 +60,7 @@ function setup() {
 }
 
 function draw() {
-    background(52, 73, 94);
+    background(0);
     
     // Increment time for sine animations
     time += 0.02;
