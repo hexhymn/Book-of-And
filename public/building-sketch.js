@@ -47,7 +47,7 @@ function preload() {
     tileImages['floor'] = loadImage('tiles/lab-floor1.png');
     tileImages['wall'] = loadImage('tiles/lab-wall1.png');
     tileImages['ceiling'] = loadImage('tiles/lab-ceiling1.png');
-    tileImages['hallway'] = loadImage('tiles/lab-stair3.png');
+    tileImages['hallway'] = loadImage('tiles/lab-hallway.png');
     tileImages['threshold'] = loadImage('tiles/lab-stair4.png');
     tileImages['room'] = loadImage('tiles/lab-room1.png');
     // Add any additional default tiles
