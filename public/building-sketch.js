@@ -214,7 +214,7 @@ function addTileToArray(tileType = 'default') {
     
     tiles.push(newTile);
 
-    if (tiles.length > 100) {
+    if (tiles.length > 200) {
         tiles.splice(0, 20); // Remove oldest 20 tiles
       }
 
