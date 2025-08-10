@@ -22,12 +22,12 @@ let usedKeywords = [];
 
 // Keyword groups - multiple keywords map to the same tile type
 let keywordGroups = {
-    'stair': ['stair', 'stairs', 'staircase', 'threshold'],
-    'door': ['door', 'doorway', 'entrance'],
-    'window': ['window', 'opening'],
+    'stair': ['stair', 'stairs', 'staircase', 'steps'],
+    'door': ['door', 'doorway', 'entrance', 'threshold'],
+    'window': ['window', 'opening', 'illumination'],
     'floor': ['floor', 'ground'],
     'wall': ['wall', 'walls'],
-    'ceiling': ['ceiling'],
+    'ceiling': ['ceiling', 'above', 'arches'],
     'hallway': ['hallway', 'corridor', 'passage'],
     'room': ['room', 'chamber', 'space']
 };
