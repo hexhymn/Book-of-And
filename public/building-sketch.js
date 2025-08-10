@@ -1,3 +1,5 @@
+
+
 // Global variables
 let tileImages = []; // Array to hold your PNG tile images
 let tiles = [];
@@ -15,16 +17,16 @@ let connected = false;
 
 // Keyword to tile mapping
 let keywordTileMap = {
-    'stair': 'stair.png',
-    'stairs': 'stair.png',
-    'door': 'door.png',
-    'window': 'window.png',
-    'floor': 'floor.png',
-    'wall': 'wall.png',
-    'ceiling': 'ceiling.png',
-    'hallway': 'hallway.png',
-    'threshold': 'threshold.png',
-    'room': 'room.png'
+    'stair': 'lab-stair.png',
+    'stairs': 'lab-stair.png',
+    'door': 'lab-door1.png',
+    'window': 'lab-stair2.png',
+    'floor': 'lab-floor1.png',
+    'wall': 'lab-wall1.png',
+    'ceiling': 'lab-ceiling1.png',
+    'hallway': 'lab-stair3.png',
+    'threshold': 'lab-door1.png',
+    'room': 'lab-room1room.png'
 };
 
 // Track which keywords have been used
@@ -47,7 +49,6 @@ function preload() {
     // tileImages['default1'] = loadImage('tiles/tile1.png');
     // tileImages['default2'] = loadImage('tiles/tile2.png');
 }
-
 function setup() {
     let canvas = createCanvas(canvasWidth, canvasHeight);
     canvas.parent('sketch-container');
@@ -60,7 +61,7 @@ function setup() {
 }
 
 function draw() {
-    background(0);
+    background(52, 73, 94);
     
     // Increment time for sine animations
     time += 0.02;
@@ -92,25 +93,28 @@ function draw() {
         // Opacity pulsing for breathing effect
         let opacity = 0.7 + sin(time * 1.2 + tile.opacityPhase) * 0.3;
         
-        if (tileImages.length > 0) {
-            // Use actual PNG images when loaded
-            let img = tileImages[tile.imageIndex];
-            push();
-            translate(tile.x, animatedY);
-            rotate(rotation);
-            
-            // Apply opacity
-            tint(255, opacity * 255);
-            
-            imageMode(CENTER);
-            image(img, 0, 0, animatedSize, animatedSize);
-            
-            // Remove tint for next tile
-            noTint();
-            pop();
-        } else {
-            // Fallback to colored diamonds with sine effects
-            drawAnimatedIsometricTile(tile.x, animatedY, tile.color, animatedSize, rotation, opacity);
+        // Draw all tiles
+        for (let tile of tiles) {
+            if (tile.tileKey && tileImages[tile.tileKey]) {
+                // Use specific keyword tile image
+                let img = tileImages[tile.tileKey];
+                push();
+                translate(tile.x, animatedY);
+                rotate(rotation);
+                
+                // Apply opacity
+                tint(255, opacity * 255);
+                
+                imageMode(CENTER);
+                image(img, 0, 0, animatedSize, animatedSize);
+                
+                // Remove tint for next tile
+                noTint();
+                pop();
+            } else {
+                // Fallback to colored diamonds with sine effects
+                drawAnimatedIsometricTile(tile.x, animatedY, tile.color, animatedSize, rotation, opacity);
+            }
         }
     }
 }
