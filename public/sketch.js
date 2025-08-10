@@ -388,9 +388,11 @@ function sendMessage(direction) {
     }
     systemPrompt += " You are a writer writing a novel about a character traversing a tower."; 
     systemPrompt += " write in the second person.";
+    systemPrompt += " Use concise language.";
     systemPrompt += " Write no more than 3 paragraphs.";
-    systemPrompt += " Write in a style that is literary and incorporates magical realism.";
+    systemPrompt += " Write in a style that is literary and incorporates elements of magical realism.";
     systemPrompt += " Write as though you are narrating the reader through an architectural space.";
+    systemPrompt += "Include architectural details and descriptive imagery and sensation of the structures and spaces the protagonist moves through.";
     systemPrompt += " The last sentence is always complete with punctuation at the end.";
     
     let maxTokens = 300;
