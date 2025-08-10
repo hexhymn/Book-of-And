@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Isometric Tiles</title>
+    <title>Isometric Tile Lab</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="controls">
         <button onclick="addRandomTile()">Add Random Tile</button>
+        <button onclick="resetKeywords()">Reset Keywords</button>
+        <button onclick="clearAllTiles()">Clear All</button>
     </div>
     <div id="sketch-container"></div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="p5.js"></script>
     <script src="building-sketch.js"></script>
 </body>
 </html>

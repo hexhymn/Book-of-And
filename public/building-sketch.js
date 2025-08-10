@@ -1,5 +1,5 @@
 // Global variables
-let tileImages = []; // Array to hold your PNG tile images
+let tileImages = {}; // Object to hold your PNG tile images (not array!)
 let tiles = [];
 let tileColors = [
     '#e74c3c', '#3498db', '#2ecc71', '#f39c12', 
@@ -19,7 +19,7 @@ let usedKeywords = [];
 // List of keywords to detect (no need for file mapping)
 let keywords = ['stair', 'stairs', 'door', 'window', 'floor', 'wall', 'ceiling', 'hallway', 'threshold', 'room'];
 
-// Preload tile images
+/// Preload tile images
 function preload() {
     // Load your keyword-specific PNG files
     tileImages['stair'] = loadImage('tiles/lab-stair.png');
@@ -32,7 +32,6 @@ function preload() {
     tileImages['threshold'] = loadImage('tiles/lab-stair4.png');
     tileImages['room'] = loadImage('tiles/lab-room1.png');
 }
-
 
 function setup() {
     let canvas = createCanvas(canvasWidth, canvasHeight);
@@ -78,28 +77,25 @@ function draw() {
         // Opacity pulsing for breathing effect
         let opacity = 0.7 + sin(time * 1.2 + tile.opacityPhase) * 0.3;
         
-        // Draw all tiles
-        for (let tile of tiles) {
-            if (tile.tileKey && tileImages[tile.tileKey]) {
-                // Use specific keyword tile image
-                let img = tileImages[tile.tileKey];
-                push();
-                translate(tile.x, animatedY);
-                rotate(rotation);
-                
-                // Apply opacity
-                tint(255, opacity * 255);
-                
-                imageMode(CENTER);
-                image(img, 0, 0, animatedSize, animatedSize);
-                
-                // Remove tint for next tile
-                noTint();
-                pop();
-            } else {
-                // Fallback to colored diamonds with sine effects
-                drawAnimatedIsometricTile(tile.x, animatedY, tile.color, animatedSize, rotation, opacity);
-            }
+        if (tile.tileKey && tileImages[tile.tileKey]) {
+            // Use specific keyword tile image
+            let img = tileImages[tile.tileKey];
+            push();
+            translate(tile.x, animatedY);
+            rotate(rotation);
+            
+            // Apply opacity
+            tint(255, opacity * 255);
+            
+            imageMode(CENTER);
+            image(img, 0, 0, animatedSize, animatedSize);
+            
+            // Remove tint for next tile
+            noTint();
+            pop();
+        } else {
+            // Fallback to colored diamonds with sine effects
+            drawAnimatedIsometricTile(tile.x, animatedY, tile.color, animatedSize, rotation, opacity);
         }
     }
 }
@@ -191,9 +187,8 @@ function initializeWebSocket() {
     
     // Listen for streaming chunks to detect keywords in real-time
     socket.on('stream-chunk', (data) => {
-        if (data.chunk) {
-            processTextForKeywords(data.chunk);
-        }
+        // Don't process chunks - wait for complete text to avoid duplicates
+        // processTextForKeywords(data.chunk);
     });
     
     // Listen for complete text
