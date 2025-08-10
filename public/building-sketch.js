@@ -75,7 +75,7 @@ function draw() {
     background(0);
     
     // Draw the circular boundary (optional - for visualization)
-    noStroke();
+    stroke(255);
     strokeWeight(1);
     noFill();
     ellipse(centerX, centerY, circleRadius * 2, circleRadius * 2);
