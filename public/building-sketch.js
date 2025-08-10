@@ -13,35 +13,24 @@ let time = 0; // Global time variable for sine animations
 let socket;
 let connected = false;
 
-// Keyword to tile mapping
-let keywordTileMap = {
-    'stair': 'stair.png',
-    'stairs': 'stair.png',
-    'door': 'door.png',
-    'window': 'window.png',
-    'floor': 'floor.png',
-    'wall': 'wall.png',
-    'ceiling': 'ceiling.png',
-    'hallway': 'hallway.png',
-    'threshold': 'threshold.png',
-    'room': 'room.png'
-};
-
 // Track which keywords have been used
 let usedKeywords = [];
+
+// List of keywords to detect (no need for file mapping)
+let keywords = ['stair', 'stairs', 'door', 'window', 'floor', 'wall', 'ceiling', 'hallway', 'threshold', 'room'];
 
 // Preload your tile images here
 function preload() {
     // Load your keyword-specific PNG files
-    tileImages['stair'] = loadImage('tiles/lab-stair.png');
-    tileImages['door'] = loadImage('tiles/lab-door1.png');
-    tileImages['window'] = loadImage('tiles/lab-stair2.png');
-    tileImages['floor'] = loadImage('tiles/lab-floor1.png');
-    tileImages['wall'] = loadImage('tiles/lab-wall1.png');
-    tileImages['ceiling'] = loadImage('tiles/lab-ceiling1.png');
-    tileImages['hallway'] = loadImage('tiles/lab-stair3.png');
-    tileImages['threshold'] = loadImage('tiles/lab-stair4.png');
-    tileImages['room'] = loadImage('tiles/lab-room1.png');
+    tileImages['stair'] = loadImage('tiles/stair.png');
+    tileImages['door'] = loadImage('tiles/door.png');
+    tileImages['window'] = loadImage('tiles/window.png');
+    tileImages['floor'] = loadImage('tiles/floor.png');
+    tileImages['wall'] = loadImage('tiles/wall.png');
+    tileImages['ceiling'] = loadImage('tiles/ceiling.png');
+    tileImages['hallway'] = loadImage('tiles/hallway.png');
+    tileImages['threshold'] = loadImage('tiles/threshold.png');
+    tileImages['room'] = loadImage('tiles/room.png');
     
     // Add any additional default tiles
     // tileImages['default1'] = loadImage('tiles/tile1.png');
@@ -60,7 +49,7 @@ function setup() {
 }
 
 function draw() {
-    background(0);
+    background(52, 73, 94);
     
     // Increment time for sine animations
     time += 0.02;
@@ -92,25 +81,28 @@ function draw() {
         // Opacity pulsing for breathing effect
         let opacity = 0.7 + sin(time * 1.2 + tile.opacityPhase) * 0.3;
         
-        if (tileImages.length > 0) {
-            // Use actual PNG images when loaded
-            let img = tileImages[tile.imageIndex];
-            push();
-            translate(tile.x, animatedY);
-            rotate(rotation);
-            
-            // Apply opacity
-            tint(255, opacity * 255);
-            
-            imageMode(CENTER);
-            image(img, 0, 0, animatedSize, animatedSize);
-            
-            // Remove tint for next tile
-            noTint();
-            pop();
-        } else {
-            // Fallback to colored diamonds with sine effects
-            drawAnimatedIsometricTile(tile.x, animatedY, tile.color, animatedSize, rotation, opacity);
+        // Draw all tiles
+        for (let tile of tiles) {
+            if (tile.tileKey && tileImages[tile.tileKey]) {
+                // Use specific keyword tile image
+                let img = tileImages[tile.tileKey];
+                push();
+                translate(tile.x, animatedY);
+                rotate(rotation);
+                
+                // Apply opacity
+                tint(255, opacity * 255);
+                
+                imageMode(CENTER);
+                image(img, 0, 0, animatedSize, animatedSize);
+                
+                // Remove tint for next tile
+                noTint();
+                pop();
+            } else {
+                // Fallback to colored diamonds with sine effects
+                drawAnimatedIsometricTile(tile.x, animatedY, tile.color, animatedSize, rotation, opacity);
+            }
         }
     }
 }
@@ -221,15 +213,18 @@ function processTextForKeywords(text) {
     let lowerText = text.toLowerCase();
     
     // Check for each keyword
-    for (let keyword in keywordTileMap) {
+    for (let keyword of keywords) {
         if (lowerText.includes(keyword) && !usedKeywords.includes(keyword)) {
             console.log(`Found keyword: ${keyword}`);
-            addTileToArray(keyword);
+            
+            // Handle special case: "stairs" maps to "stair" image
+            let tileKey = (keyword === 'stairs') ? 'stair' : keyword;
+            
+            addTileToArray(tileKey);
             usedKeywords.push(keyword);
             
-            // Optional: Add a small delay between tile additions
-            // if multiple keywords are found
-            break; // Only add one tile per text chunk
+            // Only add one tile per text chunk
+            break;
         }
     }
 }
@@ -326,7 +321,6 @@ function keyPressed() {
     }
     // Press 't' to test by adding a random keyword tile
     else if (key === 't' || key === 'T') {
-        let keywords = Object.keys(keywordTileMap);
         let randomKeyword = random(keywords);
         addTileToArray(randomKeyword);
         console.log(`Test: Added ${randomKeyword} tile`);
