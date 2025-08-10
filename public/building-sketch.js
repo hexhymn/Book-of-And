@@ -16,10 +16,25 @@ let connected = false;
 // Track which keywords have been used
 let usedKeywords = [];
 
-// List of keywords to detect (no need for file mapping)
-let keywords = ['stair', 'stairs', 'door', 'window', 'floor', 'wall', 'ceiling', 'hallway', 'threshold', 'room'];
+// Keyword groups - multiple keywords map to the same tile type
+let keywordGroups = {
+    'stair': ['stair', 'stairs', 'staircase', 'threshold'],
+    'door': ['door', 'doorway', 'entrance'],
+    'window': ['window', 'opening'],
+    'floor': ['floor', 'ground'],
+    'wall': ['wall', 'walls'],
+    'ceiling': ['ceiling'],
+    'hallway': ['hallway', 'corridor', 'passage'],
+    'room': ['room', 'chamber', 'space']
+};
 
-/// Preload tile images
+// Flatten all keywords into a single array for detection
+let keywords = [];
+for (let tileType in keywordGroups) {
+    keywords = keywords.concat(keywordGroups[tileType]);
+}
+
+// Preload tile images
 function preload() {
     // Load your keyword-specific PNG files
     tileImages['stair'] = loadImage('tiles/lab-stair.png');
@@ -31,6 +46,10 @@ function preload() {
     tileImages['hallway'] = loadImage('tiles/lab-stair3.png');
     tileImages['threshold'] = loadImage('tiles/lab-stair4.png');
     tileImages['room'] = loadImage('tiles/lab-room1.png');
+
+    // default tiles
+    tileImages['default1'] = loadImage('tiles/lab-room1.png');
+    tileImages['default2'] = loadImage('tiles/lab-stair5.png');
 }
 
 function setup() {
@@ -93,10 +112,8 @@ function draw() {
             // Remove tint for next tile
             noTint();
             pop();
-        } else {
-            // Fallback to colored diamonds with sine effects
-            drawAnimatedIsometricTile(tile.x, animatedY, tile.color, animatedSize, rotation, opacity);
         }
+        // Remove the else clause - no fallback diamonds!
     }
 }
 
@@ -209,10 +226,16 @@ function processTextForKeywords(text) {
         if (lowerText.includes(keyword) && !usedKeywords.includes(keyword)) {
             console.log(`Found keyword: ${keyword}`);
             
-            // Handle special case: "stairs" maps to "stair" image
-            let tileKey = (keyword === 'stairs') ? 'stair' : keyword;
+            // Find which tile type this keyword belongs to
+            let tileType = 'default';
+            for (let type in keywordGroups) {
+                if (keywordGroups[type].includes(keyword)) {
+                    tileType = type;
+                    break;
+                }
+            }
             
-            addTileToArray(tileKey);
+            addTileToArray(tileType);
             usedKeywords.push(keyword);
             
             // Only add one tile per text chunk
