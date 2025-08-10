@@ -9,6 +9,10 @@ let canvasWidth = 800;
 let canvasHeight = 600;
 let time = 0; // Global time variable for sine animations
 
+// Circle constraint properties
+let centerX, centerY;
+let circleRadius;
+
 // WebSocket connection
 let socket;
 let connected = false;
@@ -46,15 +50,19 @@ function preload() {
     tileImages['hallway'] = loadImage('tiles/lab-stair3.png');
     tileImages['threshold'] = loadImage('tiles/lab-stair4.png');
     tileImages['room'] = loadImage('tiles/lab-room1.png');
-
-    // default tiles
-    tileImages['default1'] = loadImage('tiles/lab-room1.png');
-    tileImages['default2'] = loadImage('tiles/lab-stair5.png');
+    // Add any additional default tiles
+    // tileImages['default1'] = loadImage('tiles/tile1.png');
+    // tileImages['default2'] = loadImage('tiles/tile2.png');
 }
 
 function setup() {
     let canvas = createCanvas(canvasWidth, canvasHeight);
     canvas.parent('sketch-container');
+    
+    // Set up circle constraints
+    centerX = canvasWidth / 2;
+    centerY = canvasHeight / 2;
+    circleRadius = min(canvasWidth, canvasHeight) * 0.4; // 40% of smaller dimension
     
     // Initialize WebSocket connection
     initializeWebSocket();
@@ -64,7 +72,13 @@ function setup() {
 }
 
 function draw() {
-    background(0);
+    background(52, 73, 94);
+    
+    // Draw the circular boundary (optional - for visualization)
+    stroke(255, 255, 255, 30);
+    strokeWeight(1);
+    noFill();
+    ellipse(centerX, centerY, circleRadius * 2, circleRadius * 2);
     
     // Increment time for sine animations
     time += 0.02;
@@ -123,8 +137,8 @@ function addTileToArray(tileType = 'default') {
     if (tiles.length === 0) {
         // First tile - place in center
         newTile = {
-            x: canvasWidth / 2,
-            y: canvasHeight / 2,
+            x: centerX,
+            y: centerY,
             color: random(tileColors),
             tileKey: tileType,
             baseSize: random(40, 60),
@@ -142,16 +156,35 @@ function addTileToArray(tileType = 'default') {
         let parentTile = tiles[tiles.length - 1];
         let connectionDistance = (parentTile.baseSize + random(40, 70)) / 2;
         
-        // Choose a random direction (8 possible directions for isometric feel)
-        let angles = [0, PI/4, PI/2, 3*PI/4, PI, 5*PI/4, 3*PI/2, 7*PI/4];
-        let angle = random(angles);
+        // Try multiple times to find a valid position within the circle
+        let newX, newY;
+        let attempts = 0;
+        let maxAttempts = 50;
         
-        let newX = parentTile.x + cos(angle) * connectionDistance;
-        let newY = parentTile.y + sin(angle) * connectionDistance;
+        do {
+            // Choose a random direction (8 possible directions for isometric feel)
+            let angles = [0, PI/4, PI/2, 3*PI/4, PI, 5*PI/4, 3*PI/2, 7*PI/4];
+            let angle = random(angles);
+            
+            newX = parentTile.x + cos(angle) * connectionDistance;
+            newY = parentTile.y + sin(angle) * connectionDistance;
+            
+            attempts++;
+            
+            // If we can't find a good spot, try shorter connection distance
+            if (attempts > maxAttempts / 2) {
+                connectionDistance *= 0.8;
+                attempts = 0;
+            }
+            
+        } while (dist(newX, newY, centerX, centerY) > circleRadius - 30 && attempts < maxAttempts);
         
-        // Keep tiles within canvas bounds
-        newX = constrain(newX, 50, canvasWidth - 50);
-        newY = constrain(newY, 50, canvasHeight - 50);
+        // If still outside after all attempts, place closer to center
+        if (dist(newX, newY, centerX, centerY) > circleRadius - 30) {
+            let angleToCenter = atan2(centerY - parentTile.y, centerX - parentTile.x);
+            newX = parentTile.x + cos(angleToCenter) * connectionDistance * 0.5;
+            newY = parentTile.y + sin(angleToCenter) * connectionDistance * 0.5;
+        }
         
         newTile = {
             x: newX,
@@ -172,7 +205,7 @@ function addTileToArray(tileType = 'default') {
     }
     
     tiles.push(newTile);
-    console.log(`Added tile: ${tileType}`);
+    console.log(`Added tile: ${tileType} at (${newTile.x.toFixed(1)}, ${newTile.y.toFixed(1)})`);
 }
 
 function addRandomTile() {
@@ -303,9 +336,10 @@ function drawAnimatedIsometricTile(x, y, tileColor, size, rotation, opacity) {
     pop();
 }
 
-// Optional: Click anywhere to add a tile at that position
+// Optional: Click anywhere to add a tile at that position (within circle)
 function mousePressed() {
-    if (mouseX >= 0 && mouseX <= canvasWidth && mouseY >= 0 && mouseY <= canvasHeight) {
+    // Check if click is within the circle
+    if (dist(mouseX, mouseY, centerX, centerY) <= circleRadius - 30) {
         let newTile = {
             x: mouseX,
             y: mouseY,
