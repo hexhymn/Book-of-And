@@ -103,14 +103,8 @@ async function streamText(socket, _prompt, _system_prompt, _max_tokens = 300, pr
       if (content) {
         fullResponse += content;
         
-        // Send to requesting client
+        // Emit each chunk to the client immediately
         socket.emit('stream-chunk', {
-          chunk: content,
-          fullText: fullResponse
-        });
-        
-        // BROADCAST to ALL clients (including tile sketch)
-        io.emit('stream-chunk', {
           chunk: content,
           fullText: fullResponse
         });
