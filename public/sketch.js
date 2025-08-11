@@ -216,7 +216,12 @@ function setup() {
         console.log("Next button clicked!");
         if (!isLoading) {
           showLoadingMessage();
-          //  Just call sendMessage - it handles the GPT choice logic now
+          if (typeof window.nextPromptFromGPT === "number") {
+            currentPrompt = window.nextPromptFromGPT; // go to GPT’s chosen branch
+            window.nextPromptFromGPT = undefined; // reset
+          } else {
+            currentPrompt = (currentPrompt + 1) % systemPrompts.length; // fallback linear
+          }
           sendMessage("forward");
         }
       });
@@ -296,10 +301,7 @@ function startStreamingDisplay() {
 function appendStreamingText(chunk) {
   if (streamingElement && isStreaming) {
     streamingText += chunk;
-    
-    // 🆕 NEW: Clean the streaming text BEFORE displaying it
-    let displayText = streamingText.replace(/\[NEXT_PROMPT:\s*\d+\]/g, '').trim();
-    streamingElement.innerHTML = displayText;
+    streamingElement.innerHTML = streamingText;
     
     // Auto-scroll to keep up with new text
     const messageArea = streamingElement.closest('.message-scroll');
@@ -323,9 +325,8 @@ function completeStreaming(fullText) {
       username.innerHTML = direction === "backward" ? " " : " ";
     }
     
-    // Clean the text by removing the [NEXT_PROMPT: X] tag before displaying
-    let displayText = fullText.replace(/\[NEXT_PROMPT:\s*\d+\]/g, '').trim();
-    streamingElement.innerHTML = displayText;
+    // Ensure final text is complete
+    streamingElement.innerHTML = fullText;
     
     // Final scroll
     const messageArea = streamingElement.closest('.message-scroll');
@@ -336,34 +337,29 @@ function completeStreaming(fullText) {
     }
   }
   
+  // IMPORTANT: Include all the memory system logic from your original handler
   console.log("Stream complete - updating memory system");
   
-  // Always update the current text (but use the cleaned version for storage)
-  let cleanText = fullText.replace(/\[NEXT_PROMPT:\s*\d+\]/g, '').trim();
-  lastGeneratedText = cleanText;
+  // Always update the current text (whether new or regenerated)
+  lastGeneratedText = fullText;
 
-  // Extract and store GPT's chosen next prompt with better validation
+  // Store GPT's chosen next prompt
   let branchMatch = fullText.match(/\[NEXT_PROMPT:\s*(\d+)\]/);
   if (branchMatch) {
     let nextNum = parseInt(branchMatch[1], 10);
-    // Validate the prompt number is within range
-    if (!isNaN(nextNum) && nextNum >= 1 && nextNum <= systemPrompts.length) {
-      window.nextPromptFromGPT = nextNum - 1; // store as 0-based index
-      console.log(`GPT chose next prompt: ${nextNum} (index: ${nextNum - 1})`);
-    } else {
-      console.warn(`Invalid prompt number from GPT: ${nextNum}. Using linear progression.`);
-      window.nextPromptFromGPT = undefined;
-    }
-  } else {
-    console.log("No [NEXT_PROMPT] tag found. Using linear progression.");
-    window.nextPromptFromGPT = undefined;
+    if (!isNaN(nextNum)) {
+    window.nextPromptFromGPT = nextNum - 1; // store as 0-based index
+    console.log(`GPT chose next prompt: ${nextNum}`);
   }
+}
+
   
   // Only add to history if it's a forward movement (new content)
+  // Regenerated content replaces the current moment
   if (direction !== "backward") {
     conversationHistory.push({
       prompt: currentPrompt,
-      response: cleanText, // Store the clean version
+      response: fullText,
       timestamp: Date.now(),
       direction: direction || 'forward'
     });
@@ -490,43 +486,33 @@ function sendMessage(direction) {
   console.log("Direction:", direction);
   console.log("Current page key:", pageKey);
 
+  let system_prompt = (systemPrompt.value() === "") ? "Be helpful" : systemPrompt.value();
+  let tokens = numTokens.value();
+
   // Prevent markup from being injected into the message
   prompt = cleanInput(prompt);
   
   if (connected) {
     inputMessage.value('');
     
-    // 🆕 IMPROVED: Better prompt navigation logic
+    // Navigate prompts - but handle backward differently
     if (direction === "forward") {
-      // Check if GPT provided a specific next prompt
-      if (typeof window.nextPromptFromGPT === "number") {
-        currentPrompt = window.nextPromptFromGPT;
-        window.nextPromptFromGPT = undefined; // Clear it
-        console.log(`Using GPT's chosen prompt: ${currentPrompt + 1}`);
-      } else {
-        // Fallback to linear progression
-        currentPrompt = (currentPrompt + 1) % systemPrompts.length;
-        console.log(`Using linear progression to prompt: ${currentPrompt + 1}`);
-      }
+      currentPrompt = (currentPrompt + 1) % systemPrompts.length;
     } else if (direction === "backward") {
       // Don't change currentPrompt - we're regenerating the same page
-      console.log(`Regenerating current prompt: ${currentPrompt + 1}`);
     }
     
-    // Ensure currentPrompt is within bounds
     currentPrompt = currentPrompt % systemPrompts.length;
  
     let systemPrompt = systemPrompts[currentPrompt];
     
-    // 🆕 IMPROVED: Different instructions based on direction
+    // Different instructions based on direction
     if (direction === "backward") {
-      systemPrompt += "\n\nIMPORTANT: Include the same [NEXT_PROMPT: X] choice as before to maintain story continuity.";
       systemPrompt += " Rewrite the same narrative moment with fresh language. Keep the same spatial context, character actions, and story progression, but use different descriptive words, sentence structures, and stylistic choices.";
       systemPrompt += " The same events occur, but the prose itself shifts.";
     } else {
-      systemPrompt += "\n\nContinue the narrative seamlessly, maintaining the same protagonist and spatial context.";
+      systemPrompt += " Continue the narrative seamlessly, maintaining the same protagonist and spatial context.";
     }
-    
     systemPrompt += " You are a writer writing a novel about a character traversing a building."; 
     systemPrompt += " write in the second person.";
     systemPrompt += " Use concise language.";
@@ -536,12 +522,9 @@ function sendMessage(direction) {
     systemPrompt += "Include architectural details and descriptive imagery and sensation of the structures and spaces the protagonist moves through.";
     systemPrompt += " The last sentence is always complete with punctuation at the end.";
     
-    // 🆕 NEW: Critical reminder about branching format
-    systemPrompt += "\n\nREMEMBER: You must choose exactly one branch and format it as [NEXT_PROMPT: X] where X is the prompt number (1-9). This tag will be hidden from the reader.";
+    let maxTokens = 250;
     
-    let maxTokens = 300; // 🆕 INCREASED: from 250 to accommodate branching instructions
-    
-    // ... rest of your existing socket.emit code stays the same ...
+    // send page and direction updates to ghost sketch before 'chat' 
     socket.emit('page-turn', {
        _currentPromptIndex: currentPrompt, 
        _direction: direction
@@ -553,17 +536,16 @@ function sendMessage(direction) {
      });
    
      socket.emit('chat', {
-       _prompt: prompt,
+       _prompt: prompt,  // NOW THIS CONTAINS THE PREVIOUS STORY CONTEXT!
        _system_prompt: systemPrompt, 
        _max_tokens: maxTokens,
        _current_prompt: currentPrompt,
        _direction: direction,
-       _is_regeneration: direction === "backward",
-       _history: conversationHistory.slice(-maxHistoryLength)
+       _is_regeneration: direction === "backward", // Flag for server
+       _history: conversationHistory.slice(-maxHistoryLength) // Send recent history
      });
   }
 }
-
 
 // Adds the visual chat message to the message list
 function addChatMessage(data) {
