@@ -12,14 +12,13 @@
 
   <style>
     .message-scroll {
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      touch-action: pan-y;
-    }
-    .messages {
-      user-select: none;
-      -webkit-user-select: none;
-    }
+  overflow-y: auto;    /* enable vertical scroll */
+  height: 100%;        /* or a fixed px value so Chromium knows it can scroll */
+  touch-action: pan-y; /* allow vertical scroll gestures */
+}
+  .messages {
+    user-select: none;   /* prevent highlighting instead of scrolling */
+  }
   </style>
   
 </head>
