@@ -395,7 +395,7 @@ function sendMessage(direction) {
     systemPrompt += "Include architectural details and descriptive imagery and sensation of the structures and spaces the protagonist moves through.";
     systemPrompt += " The last sentence is always complete with punctuation at the end.";
     
-    let maxTokens = 300;
+    let maxTokens = 250;
     
     // send page and direction updates to ghost sketch before 'chat' 
     socket.emit('page-turn', {
