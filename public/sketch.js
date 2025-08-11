@@ -216,7 +216,7 @@ function setup() {
         console.log("Next button clicked!");
         if (!isLoading) {
           showLoadingMessage();
-          // 🆕 SIMPLIFIED: Just call sendMessage - it handles the GPT choice logic now
+          //  Just call sendMessage - it handles the GPT choice logic now
           sendMessage("forward");
         }
       });
@@ -409,7 +409,7 @@ function completeStreaming(fullText) {
   }
   
   console.log("Updated conversation history:", conversationHistory);
-}
+
 
 // Add new socket event listeners (add these to your existing socket events)
 
