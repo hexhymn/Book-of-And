@@ -30,23 +30,133 @@ let pageContexts = {}; // Store the context for each page so we can regenerate i
 let currentPageKey = ""; // Track which page we're currently on
 
 //structure prompts
-let sprompt1 = "The protagonist opens a door or crosses a threshold into a new space. Describe its appearance. Go to ‘sprompt6’";
+let sprompt1 = `
+The protagonist opens a door or crosses a threshold into a new space. Describe its appearance in 2–4 vivid sentences.
 
-let sprompt2 = "The protagonist is in a new room.  They discover something unexpected embedded in the space. The protagonist gains insight from this discovery. Go to ‘sprompt6’";
+Branching rules:
+- If the space feels welcoming or expansive → go to PROMPT 4 (window view)
+- If the space is confining or dim → go to PROMPT 3 (wall interaction)
+- If the space contains movement or sound → go to PROMPT 6 (new character)
 
-let sprompt3 = "The protagonist interacts with the walls or has an internal observation of the walls of the room they are in. Include the protagonist's growing curiosity and desire to continue to explore and understand the space they have entered.Go to ‘sprompt6’";
+Instructions:
+1. Follow the branching rules to choose exactly one next prompt.
+2. Output your choice in the format: [NEXT_PROMPT: X]
+3. After [NEXT_PROMPT], continue the scene with 3–6 sentences of description or action.
+`;
 
-let sprompt4 = "A window of any shape or size has been noticed. The protagonist looks out the window- describe what they see. This illumination reveals details previously hidden and suggests the building itself is even larger than anticipated. Go to ‘sprompt6’";
+let sprompt2 = `
+The protagonist is in a new room. They discover something unexpected embedded in the space. The protagonist gains insight from this discovery.
 
-let sprompt5 = "The protagonist navigates and walks through a hallway. They experience temporal displacement - hearing impressions of other eras or futures. Include sensory details. Go to ‘sprompt6’";
+Branching rules:
+- If the insight makes them want to move deeper → go to PROMPT 5 (temporal hallway)
+- If the insight makes them want to return to a prior place → go to PROMPT 1 (door/threshold)
+- If the insight is confusing or strange → go to PROMPT 8 (look at ceiling)
 
-let sprompt6 = "The protagonist hears sounds suggesting that something else is in the space. They encounter a new character. Go to ‘sprompt6’";
+Instructions:
+1. Follow the branching rules to choose exactly one next prompt.
+2. Output your choice in the format: [NEXT_PROMPT: X]
+3. After [NEXT_PROMPT], write 3–6 sentences to continue the scene.
+`;
 
-let sprompt7 = "The protagonist and new character continue to navigate the structure. As they begin to traverse it, they become heavily aware of a strange detail about the floor they are walking on.";
+let sprompt3 = `
+The protagonist interacts with the walls or has an internal observation of the walls of the room they are in. Include the protagonist's growing curiosity and desire to continue to explore and understand the space.
 
-let sprompt8 = "The protagonist looks up at the ceiling. Anyone traveling with the protagonist will now have to go separate ways.Go to ‘sprompt6’";
+Branching rules:
+- If the walls suggest hidden passageways → go to PROMPT 9 (stairwell)
+- If the walls reveal a window → go to PROMPT 4 (window view)
+- If the walls seem to change or shift → go to PROMPT 5 (temporal hallway)
 
-let sprompt9 = "The protagonist finds a stairwell and either ascends a level in the space they are navigating. The protagonist sees a new threshold or door at the top. Go to ‘sprompt6’";
+Instructions:
+1. Choose one branch from the rules above.
+2. Output your choice in the format: [NEXT_PROMPT: X]
+3. After [NEXT_PROMPT], add 3–6 sentences of narrative.
+`;
+
+let sprompt4 = `
+A window of any shape or size has been noticed. The protagonist looks out the window.
+
+Branching rules:
+- If expansive view → go to PROMPT 1 (exit to explore outside)
+- If another building → go to PROMPT 9 (bridge/connection)
+- If impossible geometry → go to PROMPT 5 (temporal displacement)
+
+Instructions:
+1. Describe what is seen outside in 1–3 vivid sentences.
+2. Choose exactly one branch from the rules above.
+3. Output the branch in the format: [NEXT_PROMPT: X]
+4. After [NEXT_PROMPT], write 3–6 more sentences continuing the scene for that branch.
+5. Do not describe "Go to prompt" in the prose — only use the [NEXT_PROMPT] tag.
+`;
+
+let sprompt5 = `
+The protagonist navigates and walks through a hallway. They experience temporal displacement — hearing impressions of other eras or futures. Include sensory details.
+
+Branching rules:
+- If they hear voices from the future → go to PROMPT 7 (strange floor)
+- If they hear voices from the past → go to PROMPT 2 (unexpected discovery)
+- If they feel pulled in multiple directions → go to PROMPT 8 (look at ceiling)
+
+Instructions:
+1. Choose one branch.
+2. Output your choice in the format: [NEXT_PROMPT: X]
+3. After [NEXT_PROMPT], add 3–6 sentences to carry the moment forward.
+`;
+
+let sprompt6 = `
+The protagonist hears sounds suggesting that something else is in the space. They encounter a new character.
+
+Branching rules:
+- If the new character is helpful → go to PROMPT 7 (strange floor)
+- If the new character is mysterious → go to PROMPT 5 (temporal hallway)
+- If the new character is threatening → go to PROMPT 1 (door/threshold)
+
+Instructions:
+1. Choose one branch.
+2. Output your choice in the format: [NEXT_PROMPT: X]
+3. After [NEXT_PROMPT], write 3–6 sentences continuing the encounter.
+`;
+
+let sprompt7 = `
+The protagonist and any companion navigate the structure. As they traverse it, they become heavily aware of a strange detail about the floor they are walking on.
+
+Branching rules:
+- If the floor feels unstable → go to PROMPT 8 (look at ceiling)
+- If the floor reveals symbols or patterns → go to PROMPT 2 (unexpected discovery)
+- If the floor seems alive → go to PROMPT 6 (new character)
+
+Instructions:
+1. Choose one branch.
+2. Output your choice in the format: [NEXT_PROMPT: X]
+3. After [NEXT_PROMPT], write 3–6 sentences of description and action.
+`;
+
+let sprompt8 = `
+The protagonist looks up at the ceiling. Anyone traveling with the protagonist will now have to go separate ways.
+
+Branching rules:
+- If the protagonist goes alone → go to PROMPT 3 (wall interaction)
+- If they follow a companion → go to PROMPT 9 (stairwell)
+- If they remain in place → go to PROMPT 6 (new character)
+
+Instructions:
+1. Choose one branch.
+2. Output your choice in the format: [NEXT_PROMPT: X]
+3. After [NEXT_PROMPT], continue the scene for that branch.
+`;
+
+let sprompt9 = `
+The protagonist finds a stairwell and ascends to another level of the structure. The protagonist sees a new threshold or door at the top.
+
+Branching rules:
+- If the door is open → go to PROMPT 1 (door/threshold)
+- If the door is closed → go to PROMPT 3 (wall interaction)
+- If the stairwell continues beyond the door → go to PROMPT 5 (temporal hallway)
+
+Instructions:
+1. Choose one branch.
+2. Output your choice in the format: [NEXT_PROMPT: X]
+3. After [NEXT_PROMPT], write 3–6 sentences to carry the narrative forward.
+`;
 
 //declare array of system prompts
 let systemPrompts =[sprompt1,sprompt2,sprompt3,sprompt4,sprompt5,sprompt6,sprompt7,sprompt8,sprompt9];
@@ -104,8 +214,14 @@ function setup() {
       console.log("Adding event listener to next button");
       nextButton.addEventListener('click', () => {
         console.log("Next button clicked!");
-        if (!isLoading) { // Prevent multiple clicks while loading
-          showLoadingMessage(); // Show loading immediately
+        if (!isLoading) {
+          showLoadingMessage();
+          if (typeof window.nextPromptFromGPT === "number") {
+            currentPrompt = window.nextPromptFromGPT; // go to GPT’s chosen branch
+            window.nextPromptFromGPT = undefined; // reset
+          } else {
+            currentPrompt = (currentPrompt + 1) % systemPrompts.length; // fallback linear
+          }
           sendMessage("forward");
         }
       });
@@ -226,6 +342,17 @@ function completeStreaming(fullText) {
   
   // Always update the current text (whether new or regenerated)
   lastGeneratedText = fullText;
+
+  // Store GPT's chosen next prompt
+  let branchMatch = fullText.match(/\[NEXT_PROMPT:\s*(\d+)\]/);
+  if (branchMatch) {
+    let nextNum = parseInt(branchMatch[1], 10);
+    if (!isNaN(nextNum)) {
+    window.nextPromptFromGPT = nextNum - 1; // store as 0-based index
+    console.log(`GPT chose next prompt: ${nextNum}`);
+  }
+}
+
   
   // Only add to history if it's a forward movement (new content)
   // Regenerated content replaces the current moment
