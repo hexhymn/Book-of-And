@@ -80,7 +80,7 @@ function draw() {
     stroke(255);
     strokeWeight(1);
     noFill();
-    ellipse(centerX, centerY, circleRadius * 2, circleRadius * 2);
+    ellipse(centerX, centerY, circleRadius * 2.5, circleRadius * 2.5);
     
     // Increment time for sine animations
     time += 0.02;
