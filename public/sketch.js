@@ -335,7 +335,7 @@ function completeStreaming(fullText) {
   
   console.log("Stream complete - updating memory system");
   
-  //  Always update the current text (but use the cleaned version for storage)
+  // Always update the current text (but use the cleaned version for storage)
   let cleanText = fullText.replace(/\[NEXT_PROMPT:\s*\d+\]/g, '').trim();
   lastGeneratedText = cleanText;
 
@@ -360,7 +360,7 @@ function completeStreaming(fullText) {
   if (direction !== "backward") {
     conversationHistory.push({
       prompt: currentPrompt,
-      response: cleanText, // 🆕 NEW: Store the clean version
+      response: cleanText, // Store the clean version
       timestamp: Date.now(),
       direction: direction || 'forward'
     });
@@ -373,43 +373,6 @@ function completeStreaming(fullText) {
   
   console.log("Updated conversation history:", conversationHistory);
 }
-
-  
-  // IMPORTANT: Include all the memory system logic from your original handler
-  console.log("Stream complete - updating memory system");
-  
-  // Always update the current text (whether new or regenerated)
-  lastGeneratedText = fullText;
-
-  // Store GPT's chosen next prompt
-  let branchMatch = fullText.match(/\[NEXT_PROMPT:\s*(\d+)\]/);
-  if (branchMatch) {
-    let nextNum = parseInt(branchMatch[1], 10);
-    if (!isNaN(nextNum)) {
-    window.nextPromptFromGPT = nextNum - 1; // store as 0-based index
-    console.log(`GPT chose next prompt: ${nextNum}`);
-  }
-}
-
-  
-  // Only add to history if it's a forward movement (new content)
-  // Regenerated content replaces the current moment
-  if (direction !== "backward") {
-    conversationHistory.push({
-      prompt: currentPrompt,
-      response: fullText,
-      timestamp: Date.now(),
-      direction: direction || 'forward'
-    });
-    
-    // Limit history size to prevent token overflow
-    if (conversationHistory.length > maxHistoryLength * 2) {
-      conversationHistory = conversationHistory.slice(-maxHistoryLength);
-    }
-  }
-  
-  console.log("Updated conversation history:", conversationHistory);
-
 
 // Add new socket event listeners (add these to your existing socket events)
 
