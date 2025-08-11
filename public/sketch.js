@@ -49,7 +49,7 @@ The protagonist is in a new room. They discover something unexpected embedded in
 
 Branching rules:
 - If the insight makes them want to move deeper → go to PROMPT 5 (temporal hallway)
-- If the insight makes them want to return to a prior place → go to PROMPT 1 (door/threshold)
+- If the insight makes them want to examine the room further → go to PROMPT 3 (wall interaction)
 - If the insight is confusing or strange → go to PROMPT 8 (look at ceiling)
 
 Instructions:
@@ -63,8 +63,8 @@ The protagonist interacts with the walls or has an internal observation of the w
 
 Branching rules:
 - If the walls suggest hidden passageways → go to PROMPT 9 (stairwell)
-- If the walls reveal a window → go to PROMPT 4 (window view)
-- If the walls seem to change or shift → go to PROMPT 5 (temporal hallway)
+- If the walls emit sounds → go to PROMPT 5 (temporal hallway)
+- If the walls seem to change or shift → go to PROMPT 2 (new room)
 
 Instructions:
 1. Choose one branch from the rules above.
@@ -76,7 +76,7 @@ let sprompt4 = `
 A window of any shape or size has been noticed. The protagonist looks out the window.
 
 Branching rules:
-- If expansive view → go to PROMPT 1 (exit to explore outside)
+- If expansive view → go to PROMPT 1 (new threshold)
 - If another building → go to PROMPT 9 (bridge/connection)
 - If impossible geometry → go to PROMPT 5 (temporal displacement)
 
@@ -92,9 +92,9 @@ let sprompt5 = `
 The protagonist navigates and walks through a hallway. They experience temporal displacement — hearing impressions of other eras or futures. Include sensory details.
 
 Branching rules:
-- If they hear voices from the future → go to PROMPT 7 (strange floor)
+- If they hear voices from the future → go to PROMPT 9 (ascend stairway)
 - If they hear voices from the past → go to PROMPT 2 (unexpected discovery)
-- If they feel pulled in multiple directions → go to PROMPT 8 (look at ceiling)
+- If they feel pulled in multiple directions → go to PROMPT 6 (new character)
 
 Instructions:
 1. Choose one branch.
@@ -106,7 +106,7 @@ let sprompt6 = `
 The protagonist hears sounds suggesting that something else is in the space. They encounter a new character.
 
 Branching rules:
-- If the new character is helpful → go to PROMPT 7 (strange floor)
+- If the new character is wise → go to PROMPT 7 (strange floor)
 - If the new character is mysterious → go to PROMPT 5 (temporal hallway)
 - If the new character is threatening → go to PROMPT 1 (door/threshold)
 
@@ -120,7 +120,7 @@ let sprompt7 = `
 The protagonist and any companion navigate the structure. As they traverse it, they become heavily aware of a strange detail about the floor they are walking on.
 
 Branching rules:
-- If the floor feels unstable → go to PROMPT 8 (look at ceiling)
+- If the floor feels unstable → go to PROMPT 1 (hidden door)
 - If the floor reveals symbols or patterns → go to PROMPT 2 (unexpected discovery)
 - If the floor seems alive → go to PROMPT 6 (new character)
 
@@ -136,7 +136,7 @@ The protagonist looks up at the ceiling. Anyone traveling with the protagonist w
 Branching rules:
 - If the protagonist goes alone → go to PROMPT 3 (wall interaction)
 - If they follow a companion → go to PROMPT 9 (stairwell)
-- If they remain in place → go to PROMPT 6 (new character)
+- If they remain in place → go to PROMPT 4 (window)
 
 Instructions:
 1. Choose one branch.
@@ -149,8 +149,8 @@ The protagonist finds a stairwell and ascends to another level of the structure.
 
 Branching rules:
 - If the door is open → go to PROMPT 1 (door/threshold)
-- If the door is closed → go to PROMPT 3 (wall interaction)
-- If the stairwell continues beyond the door → go to PROMPT 5 (temporal hallway)
+- If the door is closed → go to PROMPT 6 (new character opens the door)
+- If the stairwell continues beyond the door → go to PROMPT 9 (stairwell)
 
 Instructions:
 1. Choose one branch.
