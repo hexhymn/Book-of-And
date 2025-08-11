@@ -296,7 +296,10 @@ function startStreamingDisplay() {
 function appendStreamingText(chunk) {
   if (streamingElement && isStreaming) {
     streamingText += chunk;
-    streamingElement.innerHTML = streamingText;
+    
+    // 🆕 NEW: Clean the streaming text BEFORE displaying it
+    let displayText = streamingText.replace(/\[NEXT_PROMPT:\s*\d+\]/g, '').trim();
+    streamingElement.innerHTML = displayText;
     
     // Auto-scroll to keep up with new text
     const messageArea = streamingElement.closest('.message-scroll');
