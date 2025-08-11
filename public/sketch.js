@@ -30,23 +30,23 @@ let pageContexts = {}; // Store the context for each page so we can regenerate i
 let currentPageKey = ""; // Track which page we're currently on
 
 //structure prompts
-let sprompt1 = "The protagonist opens a door or crosses a threshold into a new space. Describe its appearance.";
+let sprompt1 = "The protagonist opens a door or crosses a threshold into a new space. Describe its appearance. Go to ‘sprompt6’";
 
-let sprompt2 = "The protagonist is in a new room.  They discover something unexpected embedded in the space. This object or marking suggests someone else has been here before. The protagonist gains insight from this discovery.";
+let sprompt2 = "The protagonist is in a new room.  They discover something unexpected embedded in the space. The protagonist gains insight from this discovery. Go to ‘sprompt6’";
 
-let sprompt3 = "The protagonist interacts with the walls or has an internal observation of the walls of the room they are in. Include the protagonist's growing curiosity and desire to continue to explore and understand the space they have entered.";
+let sprompt3 = "The protagonist interacts with the walls or has an internal observation of the walls of the room they are in. Include the protagonist's growing curiosity and desire to continue to explore and understand the space they have entered.Go to ‘sprompt6’";
 
-let sprompt4 = "A window of any shape or size has been noticed. The protagonist looks out the window- describe what they see. This illumination reveals details previously hidden and suggests the building itself is even larger than anticipated.";
+let sprompt4 = "A window of any shape or size has been noticed. The protagonist looks out the window- describe what they see. This illumination reveals details previously hidden and suggests the building itself is even larger than anticipated. Go to ‘sprompt6’";
 
-let sprompt5 = "The protagonist navigates and walks through a hallway. They experience temporal displacement - hearing impressions of other eras or futures. Include sensory details.";
+let sprompt5 = "The protagonist navigates and walks through a hallway. They experience temporal displacement - hearing impressions of other eras or futures. Include sensory details. Go to ‘sprompt6’";
 
-let sprompt6 = "The protagonist hears sounds suggesting that something else is in the space. They encounter a new character.";
+let sprompt6 = "The protagonist hears sounds suggesting that something else is in the space. They encounter a new character. Go to ‘sprompt6’";
 
 let sprompt7 = "The protagonist and new character continue to navigate the structure. As they begin to traverse it, they become heavily aware of a strange detail about the floor they are walking on.";
 
-let sprompt8 = "The protagonist looks up at the ceiling. Anyone traveling with the protagonist will now have to go separate ways.";
+let sprompt8 = "The protagonist looks up at the ceiling. Anyone traveling with the protagonist will now have to go separate ways.Go to ‘sprompt6’";
 
-let sprompt9 = "The protagonist finds a stairwell and either ascends a level in the space they are navigating. The protagonist sees a new threshold or door at the top.";
+let sprompt9 = "The protagonist finds a stairwell and either ascends a level in the space they are navigating. The protagonist sees a new threshold or door at the top. Go to ‘sprompt6’";
 
 //declare array of system prompts
 let systemPrompts =[sprompt1,sprompt2,sprompt3,sprompt4,sprompt5,sprompt6,sprompt7,sprompt8,sprompt9];
@@ -382,7 +382,7 @@ function sendMessage(direction) {
     // Different instructions based on direction
     if (direction === "backward") {
       systemPrompt += " Rewrite the same narrative moment with fresh language. Keep the same spatial context, character actions, and story progression, but use different descriptive words, sentence structures, and stylistic choices.";
-      systemPrompt += " The same events occur, but the prose itself shifts like light changing in a room.";
+      systemPrompt += " The same events occur, but the prose itself shifts.";
     } else {
       systemPrompt += " Continue the narrative seamlessly, maintaining the same protagonist and spatial context.";
     }
