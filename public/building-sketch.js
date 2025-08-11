@@ -5,8 +5,8 @@ let tileColors = [
     '#e74c3c', '#3498db', '#2ecc71', '#f39c12', 
     '#9b59b6', '#1abc9c', '#e67e22', '#34495e', '#f1c40f'
 ];
-let canvasWidth = 900;
-let canvasHeight = 600;
+let canvasWidth = 800;
+let canvasHeight = 800;
 let time = 0; // Global time variable for sine animations
 
 // Circle constraint properties
@@ -77,7 +77,7 @@ function draw() {
     background(0);
     
     // Draw the circular boundary (optional - for visualization)
-    stroke(255);
+    noStroke();
     strokeWeight(1);
     noFill();
     ellipse(centerX, centerY, circleRadius * 2.8, circleRadius * 2.8);
