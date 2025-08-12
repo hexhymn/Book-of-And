@@ -266,7 +266,7 @@ function showLoadingMessage() {
   // Wait 800ms before showing "loading..." text
   loadingTimeout = setTimeout(() => {
     if (isLoading && !isStreaming) { // Only show if still loading and not streaming yet
-      messageBodySpan.html("loading...");
+      messageBodySpan.html("searching for a door...");
       messageBodySpan.addClass("loading-text");
     }
   }, 200); // Adjust this delay as needed
