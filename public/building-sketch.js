@@ -43,11 +43,11 @@ function preload() {
     // Load your keyword-specific PNG files
     tileImages['stair'] = loadImage('tiles/lab-stair.png');
     tileImages['door'] = loadImage('tiles/lab-door1.png');
-    tileImages['window'] = loadImage('tiles/lab-stair2.png');
+    tileImages['window'] = loadImage('tiles/lab-window.png');
     tileImages['floor'] = loadImage('tiles/lab-floor1.png');
     tileImages['wall'] = loadImage('tiles/lab-wall1.png');
     tileImages['ceiling'] = loadImage('tiles/lab-ceiling1.png');
-    tileImages['hallway'] = loadImage('tiles/lab-hallway.png');
+    tileImages['hallway'] = loadImage('tiles/lab-hall.png');
     tileImages['threshold'] = loadImage('tiles/lab-stair4.png');
     tileImages['room'] = loadImage('tiles/lab-room1.png');
     // Add any additional default tiles
