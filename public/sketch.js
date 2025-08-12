@@ -40,8 +40,8 @@ Branching rules:
 
 Instructions:
 1. Follow the branching rules to choose exactly one next prompt.
-2. Output your choice in the format: [NEXT_PROMPT: X]
-3. After [NEXT_PROMPT], continue the scene with 3–6 sentences of description or action.
+2. Output your choice in the format: [ENTRY: X]
+3. After [ENTRY], continue the scene with 3–6 sentences of description or action.
 `;
 
 let sprompt2 = `
@@ -54,8 +54,8 @@ Branching rules:
 
 Instructions:
 1. Follow the branching rules to choose exactly one next prompt.
-2. Output your choice in the format: [NEXT_PROMPT: X]
-3. After [NEXT_PROMPT], write 3–6 sentences to continue the scene.
+2. Output your choice in the format: [ENTRY: X]
+3. After [ENTRY], write 3–6 sentences to continue the scene.
 `;
 
 let sprompt3 = `
@@ -68,8 +68,8 @@ Branching rules:
 
 Instructions:
 1. Choose one branch from the rules above.
-2. Output your choice in the format: [NEXT_PROMPT: X]
-3. After [NEXT_PROMPT], add 3–6 sentences of narrative.
+2. Output your choice in the format: [ENTRY: X]
+3. After [ENTRY], add 3–6 sentences of narrative.
 `;
 
 let sprompt4 = `
@@ -83,9 +83,9 @@ Branching rules:
 Instructions:
 1. Describe what is seen outside in 1–3 vivid sentences.
 2. Choose exactly one branch from the rules above.
-3. Output the branch in the format: [NEXT_PROMPT: X]
-4. After [NEXT_PROMPT], write 3–6 more sentences continuing the scene for that branch.
-5. Do not describe "Go to prompt" in the prose — only use the [NEXT_PROMPT] tag.
+3. Output the branch in the format: [ENTRY: X]
+4. After [ENTRY], write 3–6 more sentences continuing the scene for that branch.
+5. Do not describe "Go to prompt" in the prose — only use the [ENTRY] tag.
 `;
 
 let sprompt5 = `
@@ -98,8 +98,8 @@ Branching rules:
 
 Instructions:
 1. Choose one branch.
-2. Output your choice in the format: [NEXT_PROMPT: X]
-3. After [NEXT_PROMPT], add 3–6 sentences to carry the moment forward.
+2. Output your choice in the format: [ENTRY: X]
+3. After [ENTRY], add 3–6 sentences to carry the moment forward.
 `;
 
 let sprompt6 = `
@@ -112,8 +112,8 @@ Branching rules:
 
 Instructions:
 1. Choose one branch.
-2. Output your choice in the format: [NEXT_PROMPT: X]
-3. After [NEXT_PROMPT], write 3–6 sentences continuing the encounter.
+2. Output your choice in the format: [ENTRY: X]
+3. After [ENTRY], write 3–6 sentences continuing the encounter.
 `;
 
 let sprompt7 = `
@@ -126,8 +126,8 @@ Branching rules:
 
 Instructions:
 1. Choose one branch.
-2. Output your choice in the format: [NEXT_PROMPT: X]
-3. After [NEXT_PROMPT], write 3–6 sentences of description and action.
+2. Output your choice in the format: [ENTRY: X]
+3. After [ENTRY], write 3–6 sentences of description and action.
 `;
 
 let sprompt8 = `
@@ -140,8 +140,8 @@ Branching rules:
 
 Instructions:
 1. Choose one branch.
-2. Output your choice in the format: [NEXT_PROMPT: X]
-3. After [NEXT_PROMPT], continue the scene for that branch.
+2. Output your choice in the format: [ENTRY: X]
+3. After [ENTRY], continue the scene for that branch.
 `;
 
 let sprompt9 = `
@@ -154,8 +154,8 @@ Branching rules:
 
 Instructions:
 1. Choose one branch.
-2. Output your choice in the format: [NEXT_PROMPT: X]
-3. After [NEXT_PROMPT], write 3–6 sentences to carry the narrative forward.
+2. Output your choice in the format: [ENTRY: X]
+3. After [ENTRY], write 3–6 sentences to carry the narrative forward.
 `;
 
 //declare array of system prompts
@@ -344,7 +344,7 @@ function completeStreaming(fullText) {
   lastGeneratedText = fullText;
 
   // Store GPT's chosen next prompt
-  let branchMatch = fullText.match(/\[NEXT_PROMPT:\s*(\d+)\]/);
+  let branchMatch = fullText.match(/\[ENTRY:\s*(\d+)\]/);
   if (branchMatch) {
     let nextNum = parseInt(branchMatch[1], 10);
     if (!isNaN(nextNum)) {
