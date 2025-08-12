@@ -269,7 +269,7 @@ function showLoadingMessage() {
       messageBodySpan.html("loading...");
       messageBodySpan.addClass("loading-text");
     }
-  }, 800); // Adjust this delay as needed
+  }, 200); // Adjust this delay as needed
 
   // Scroll to bottom
   messageArea.elt.parentElement.scrollTop = messageArea.elt.parentElement.scrollHeight;
