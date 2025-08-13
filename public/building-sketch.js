@@ -396,3 +396,11 @@ function keyPressed() {
         console.log(`Test: Added ${randomKeyword} tile`);
     }
 }
+
+function mousePressed() {
+    if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
+      let fs = fullscreen();
+      fullscreen(!fs);
+    }
+  
+      }
